@@ -96,12 +96,22 @@
   }
   .site-footer a { color: var(--accent); text-decoration: none; }
   .site-footer a:hover { text-decoration: underline; }
+  .chart-wrap {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 20px 20px 16px; margin-bottom: 24px;
+  }
+  .chart-title { font-size: 13px; font-weight: 500; color: var(--text2); margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
+  .chart-year-tabs { display: flex; gap: 6px; }
+  .chart-year-tab { font-family: var(--font); font-size: 12px; padding: 3px 10px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text2); cursor: pointer; }
+  .chart-year-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .chart-canvas-wrap { position: relative; height: 200px; }
   @media (max-width: 640px) {
     .site-header { flex-direction: column; align-items: flex-start; }
     .filter-bar input { min-width: 100%; }
     .stats { grid-template-columns: repeat(2, 1fr); }
   }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 <body>
 <div class="shell">
@@ -120,6 +130,17 @@
     <div class="stat"><div class="stat-label">진행중</div><div class="stat-value" id="s-active">—</div></div>
     <div class="stat"><div class="stat-label">총 집행예산</div><div class="stat-value" id="s-budget">—</div></div>
     <div class="stat"><div class="stat-label">광고주 수</div><div class="stat-value" id="s-clients">—</div></div>
+  </div>
+
+
+  <div class="chart-wrap">
+    <div class="chart-title">
+      <span>월별 광고비 집행 현황</span>
+      <div class="chart-year-tabs" id="year-tabs"></div>
+    </div>
+    <div class="chart-canvas-wrap">
+      <canvas id="budget-chart"></canvas>
+    </div>
   </div>
 
   <div class="filter-bar">
@@ -145,8 +166,8 @@
           <th onclick="sortBy('시작일')" style="width:175px">집행기간 <span class="arr" id="arr-시작일"></span></th>
           <th onclick="sortBy('시작연도')" style="width:75px">시작연도 <span class="arr" id="arr-시작연도"></span></th>
           <th onclick="sortBy('시작월')" style="width:50px">월 <span class="arr" id="arr-시작월"></span></th>
-          <th onclick="sortBy('세금계산서발행연도')" style="width:95px">세금계산서 연도 <span class="arr" id="arr-세금계산서발행연도"></span></th>
-          <th onclick="sortBy('세금계산서발행월')" style="width:75px">세금계산서 월 <span class="arr" id="arr-세금계산서발행월"></span></th>
+          <th onclick="sortBy('세금계산서 발행연도')" style="width:95px">세금계산서 연도 <span class="arr" id="arr-세금계산서 발행연도"></span></th>
+          <th onclick="sortBy('세금계산서 발행월')" style="width:75px">세금계산서 월 <span class="arr" id="arr-세금계산서 발행월"></span></th>
           <th onclick="sortBy('거래분류')" style="width:75px">거래분류 <span class="arr" id="arr-거래분류"></span></th>
         </tr>
       </thead>
@@ -163,7 +184,7 @@
 </div>
 
 <script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbwJuISaAVPXc2a2LC3B4LF855Vj8Jsge6xBp_xrJv_KgL2tCN-4o0fh5gK_OnXeoM6Z/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbwFWH5DF7J_UEfq1bGc1H-CTI1hgMOR1_tamrlo7SI6Smr5EfgCFOxKmEWd5g9fKZk/exec';
 
 let allData = [];
 let sortKey = '시작일';
@@ -183,7 +204,6 @@ async function fetchData() {
     const now = new Date().toLocaleString('ko-KR', { month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' });
     document.getElementById('last-updated').textContent = `마지막 업데이트 ${now} · 구글 시트 실시간 연동`;
     populateFilters();
-    updateStats();
     render();
   } catch(e) {
     document.getElementById('last-updated').textContent = '데이터 로드 실패';
@@ -197,6 +217,13 @@ async function fetchData() {
 }
 
 function getVal(row, key) {
+  return row[key] !== undefined && row[key] !== null ? String(row[key]) : '';
+}
+
+function findVal(row, ...keywords) {
+  // 키 이름에 모든 키워드가 포함된 컬럼을 찾음
+  const key = Object.keys(row).find(k => keywords.every(kw => k.includes(kw)));
+  if (!key) return '';
   return row[key] !== undefined && row[key] !== null ? String(row[key]) : '';
 }
 
@@ -235,7 +262,7 @@ function getFiltered() {
     return true;
   }).sort((a, b) => {
     let av = getVal(a, sortKey), bv = getVal(b, sortKey);
-    const numKeys = ['예산(VAT별도)', '예산', '시작월', '세금계산서발행월', '시작연도', '세금계산서발행연도'];
+    const numKeys = ['예산(VAT별도)', '예산', '시작월', '세금계산서 발행월', '시작연도', '세금계산서 발행연도'];
     if (numKeys.includes(sortKey)) {
       av = parseFloat(String(av).replace(/[^0-9.]/g,'')) || 0;
       bv = parseFloat(String(bv).replace(/[^0-9.]/g,'')) || 0;
@@ -244,19 +271,19 @@ function getFiltered() {
   });
 }
 
-function updateStats() {
-  document.getElementById('s-total').textContent = allData.length.toLocaleString();
-  document.getElementById('s-active').textContent = allData.filter(d => getVal(d,'상태') === '진행중').length.toLocaleString();
+function updateStats(data) {
+  const d = data || allData;
+  document.getElementById('s-total').textContent = d.length.toLocaleString();
+  document.getElementById('s-active').textContent = d.filter(r => getVal(r,'상태') === '진행중').length.toLocaleString();
 
-  // 예산 컬럼명 자동 감지
   const budgetKey = Object.keys(allData[0] || {}).find(k => k.includes('예산')) || '예산(VAT별도)';
-  const total = allData.reduce((acc, d) => {
-    return acc + (parseFloat(String(getVal(d, budgetKey)).replace(/[^0-9.]/g,'')) || 0);
+  const total = d.reduce((acc, r) => {
+    return acc + (parseFloat(String(getVal(r, budgetKey)).replace(/[^0-9.]/g,'')) || 0);
   }, 0);
   document.getElementById('s-budget').textContent = total >= 100000000
     ? Math.round(total / 100000000) + '억'
     : Math.round(total / 10000) + '만';
-  document.getElementById('s-clients').textContent = new Set(allData.map(d => getVal(d,'광고주')).filter(Boolean)).size;
+  document.getElementById('s-clients').textContent = new Set(d.map(r => getVal(r,'광고주')).filter(Boolean)).size;
 }
 
 function fmtBudget(d) {
@@ -265,14 +292,25 @@ function fmtBudget(d) {
   return n ? n.toLocaleString('ko-KR') : '-';
 }
 
+function fmtDate(raw) {
+  if (!raw) return '-';
+  const s = String(raw);
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+  return s;
+}
+
 function fmtPeriod(d) {
-  const s = getVal(d, '시작일'), e = getVal(d, '종료일');
-  if (s && e) return `${s} ~ ${e}`;
-  return s || '-';
+  const s = fmtDate(getVal(d, '시작일'));
+  const e = fmtDate(getVal(d, '종료일'));
+  if (s !== '-' && e !== '-') return `${s} ~ ${e}`;
+  return s !== '-' ? s : '-';
 }
 
 function render() {
   const data = getFiltered();
+  updateStats(data);
+  buildChart(data);
   document.getElementById('row-count').textContent = `${data.length.toLocaleString()}개 캠페인`;
   const tbody = document.getElementById('table-body');
   if (!data.length) {
@@ -297,8 +335,8 @@ function render() {
     const agency   = getVal(d,'대행사');
     const year     = getVal(d,'시작연도');
     const month    = getVal(d,'시작월');
-    const taxYear  = getVal(d,'세금계산서발행연도');
-    const taxMonth = getVal(d,'세금계산서발행월');
+    const taxYear  = findVal(d, '세금계산서', '발행연도') || findVal(d, '세금계산서발행연도') || findVal(d, '세금계산서 발행연도');
+    const taxMonth = findVal(d, '세금계산서', '발행월') || findVal(d, '세금계산서발행월') || findVal(d, '세금계산서 발행월');
     return `<tr>
       <td>${badgeSt}</td>
       <td title="${client}">${client||'-'}</td>
@@ -334,6 +372,86 @@ function resetFilters() {
   document.getElementById(id).addEventListener('input', render);
   document.getElementById(id).addEventListener('change', render);
 });
+
+let budgetChart = null;
+let chartYear = null;
+
+function buildChart(data) {
+  const years = [...new Set(data.map(d => getVal(d,'시작연도')).filter(Boolean))].sort();
+  if (!chartYear || !years.includes(chartYear)) chartYear = years[years.length - 1] || null;
+
+  // Year tabs
+  const tabsEl = document.getElementById('year-tabs');
+  tabsEl.innerHTML = years.map(y =>
+    `<button class="chart-year-tab${y === chartYear ? ' active' : ''}" onclick="setChartYear('${y}')">${y}</button>`
+  ).join('');
+
+  const budgetKey = Object.keys(data[0] || allData[0] || {}).find(k => k.includes('예산')) || '예산(VAT별도)';
+  const monthlyData = {};
+  for (let m = 1; m <= 12; m++) monthlyData[m] = 0;
+
+  data.filter(d => getVal(d,'시작연도') === chartYear).forEach(d => {
+    const m = parseInt(getVal(d,'시작월'));
+    const b = parseFloat(String(getVal(d, budgetKey)).replace(/[^0-9.]/g,'')) || 0;
+    if (m >= 1 && m <= 12) monthlyData[m] += b;
+  });
+
+  const labels = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  const values = Object.values(monthlyData);
+  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const barColor = isDark ? 'rgba(127,168,245,0.8)' : 'rgba(44,95,189,0.75)';
+  const barHover = isDark ? 'rgba(127,168,245,1)' : 'rgba(44,95,189,1)';
+  const gridColor = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
+  const textColor = isDark ? '#6a6865' : '#9a9891';
+
+  if (budgetChart) budgetChart.destroy();
+  const ctx = document.getElementById('budget-chart').getContext('2d');
+  budgetChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        backgroundColor: barColor,
+        hoverBackgroundColor: barHover,
+        borderRadius: 5,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const v = ctx.parsed.y;
+              if (v >= 100000000) return ` ${(v/100000000).toFixed(1)}억원`;
+              if (v >= 10000) return ` ${Math.round(v/10000)}만원`;
+              return ` ${v.toLocaleString()}원`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: textColor, font: { size: 11 } } },
+        y: {
+          grid: { color: gridColor },
+          ticks: {
+            color: textColor, font: { size: 11 },
+            callback: v => v >= 100000000 ? (v/100000000).toFixed(0)+'억' : v >= 10000 ? (v/10000).toFixed(0)+'만' : v
+          }
+        }
+      }
+    }
+  });
+}
+
+function setChartYear(year) {
+  chartYear = year;
+  buildChart(getFiltered());
+}
 
 fetchData();
 setInterval(fetchData, 5 * 60 * 1000);
