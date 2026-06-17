@@ -228,7 +228,6 @@
     <div class="stat"><div class="stat-label">세금계산서 발행 예산</div><div class="stat-value" id="s-taxbudget">—</div></div>
   </div>
 
-
   <div class="chart-wrap">
     <div class="chart-title">
       <span>월별 광고비 집행 현황</span>
@@ -243,6 +242,7 @@
     <input type="search" id="f-search" placeholder="캠페인명 / 광고주 검색..." />
     <select id="f-status"><option value="">전체 상태</option></select>
     <select id="f-client"><option value="">전체 광고주</option></select>
+    <select id="f-agency"><option value="">전체 대행사</option></select>
     <select id="f-year"><option value="">전체 연도</option></select>
     <select id="f-type"><option value="">전체 거래분류</option></select>
     <select id="f-taxmonth"><option value="">전체 세금계산서 월</option></select>
@@ -401,6 +401,7 @@ function populateFilters() {
   };
   add('f-status', '상태');
   add('f-client', '광고주');
+  add('f-agency', '대행사');
   add('f-year',   '시작연도');
   add('f-type',   '거래분류');
 
@@ -423,6 +424,7 @@ function getFiltered() {
   const search = document.getElementById('f-search').value.toLowerCase();
   const status = document.getElementById('f-status').value;
   const client = document.getElementById('f-client').value;
+  const agency = document.getElementById('f-agency').value;
   const year   = document.getElementById('f-year').value;
   const type     = document.getElementById('f-type').value;
   const taxmonth = document.getElementById('f-taxmonth').value;
@@ -433,6 +435,7 @@ function getFiltered() {
     if (search && !c.includes(search) && !p.includes(search)) return false;
     if (status && getVal(d, '상태')    !== status) return false;
     if (client && getVal(d, '광고주')  !== client) return false;
+    if (agency && getVal(d, '대행사')  !== agency) return false;
     if (type   && getVal(d, '거래분류') !== type)   return false;
     if (taxmonth) {
       const tm = findVal(d, '세금계산서', '발행월') || findVal(d, '세금계산서발행월') || findVal(d, '세금계산서 발행월');
@@ -562,11 +565,11 @@ function sortBy(key) {
 
 function resetFilters() {
   document.getElementById('f-search').value = '';
-  ['f-status','f-client','f-year','f-type','f-taxmonth'].forEach(id => document.getElementById(id).selectedIndex = 0);
+  ['f-status','f-client','f-agency','f-year','f-type','f-taxmonth'].forEach(id => document.getElementById(id).selectedIndex = 0);
   render();
 }
 
-['f-search','f-status','f-client','f-year','f-type','f-taxmonth'].forEach(id => {
+['f-search','f-status','f-client','f-agency','f-year','f-type','f-taxmonth'].forEach(id => {
   document.getElementById(id).addEventListener('input', render);
   document.getElementById(id).addEventListener('change', render);
 });
