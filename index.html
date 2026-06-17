@@ -254,7 +254,8 @@ function populateFilters() {
   }).filter(Boolean))].sort((a,b) => parseFloat(a)-parseFloat(b));
   taxMonths.forEach(v => {
     const o = document.createElement('option');
-    o.value = v; o.textContent = v + '월'; taxMonthSel.appendChild(o);
+    const label = String(v).replace(/월$/, '') + '월';
+    o.value = v; o.textContent = label; taxMonthSel.appendChild(o);
   });
   taxMonthSel.value = curTax;
 }
@@ -273,11 +274,17 @@ function getFiltered() {
     if (search && !c.includes(search) && !p.includes(search)) return false;
     if (status && getVal(d, '상태')    !== status) return false;
     if (client && getVal(d, '광고주')  !== client) return false;
-    if (year   && getVal(d, '시작연도') !== year)   return false;
     if (type   && getVal(d, '거래분류') !== type)   return false;
     if (taxmonth) {
       const tm = findVal(d, '세금계산서', '발행월') || findVal(d, '세금계산서발행월') || findVal(d, '세금계산서 발행월');
       if (tm !== taxmonth) return false;
+      // 세금계산서 월 필터가 켜지면, 연도 필터는 "세금계산서 발행연도" 기준으로 적용
+      if (year) {
+        const ty = findVal(d, '세금계산서', '발행연도') || findVal(d, '세금계산서발행연도') || findVal(d, '세금계산서 발행연도');
+        if (ty !== year) return false;
+      }
+    } else {
+      if (year && getVal(d, '시작연도') !== year) return false;
     }
     return true;
   }).sort((a, b) => {
