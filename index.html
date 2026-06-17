@@ -130,6 +130,7 @@
     <div class="stat"><div class="stat-label">진행중</div><div class="stat-value" id="s-active">—</div></div>
     <div class="stat"><div class="stat-label">총 집행예산</div><div class="stat-value" id="s-budget">—</div></div>
     <div class="stat"><div class="stat-label">광고주 수</div><div class="stat-value" id="s-clients">—</div></div>
+    <div class="stat"><div class="stat-label">세금계산서 발행 예산</div><div class="stat-value" id="s-taxbudget">—</div></div>
   </div>
 
 
@@ -284,6 +285,18 @@ function updateStats(data) {
     ? Math.round(total / 100000000) + '억'
     : Math.round(total / 10000) + '만';
   document.getElementById('s-clients').textContent = new Set(d.map(r => getVal(r,'광고주')).filter(Boolean)).size;
+
+  // 세금계산서 발행월 기준 예산 합계
+  const taxTotal = d.filter(r => {
+    const ty = findVal(r, '세금계산서', '발행연도') || findVal(r, '세금계산서발행연도') || findVal(r, '세금계산서 발행연도');
+    const tm = findVal(r, '세금계산서', '발행월') || findVal(r, '세금계산서발행월') || findVal(r, '세금계산서 발행월');
+    return ty && tm;
+  }).reduce((acc, r) => {
+    return acc + (parseFloat(String(getVal(r, budgetKey)).replace(/[^0-9.]/g,'')) || 0);
+  }, 0);
+  document.getElementById('s-taxbudget').textContent = taxTotal >= 100000000
+    ? Math.round(taxTotal / 100000000) + '억'
+    : Math.round(taxTotal / 10000) + '만';
 }
 
 function fmtBudget(d) {
