@@ -150,6 +150,7 @@
     <select id="f-client"><option value="">전체 광고주</option></select>
     <select id="f-year"><option value="">전체 연도</option></select>
     <select id="f-type"><option value="">전체 거래분류</option></select>
+    <select id="f-taxmonth"><option value="">전체 세금계산서 월</option></select>
     <button class="reset-btn" onclick="resetFilters()">초기화</button>
   </div>
 
@@ -243,6 +244,19 @@ function populateFilters() {
   add('f-client', '광고주');
   add('f-year',   '시작연도');
   add('f-type',   '거래분류');
+
+  // 세금계산서 발행월 필터 (숫자 정렬)
+  const taxMonthSel = document.getElementById('f-taxmonth');
+  const curTax = taxMonthSel.value;
+  while (taxMonthSel.options.length > 1) taxMonthSel.remove(1);
+  const taxMonths = [...new Set(allData.map(d => {
+    return findVal(d, '세금계산서', '발행월') || findVal(d, '세금계산서발행월') || findVal(d, '세금계산서 발행월');
+  }).filter(Boolean))].sort((a,b) => parseFloat(a)-parseFloat(b));
+  taxMonths.forEach(v => {
+    const o = document.createElement('option');
+    o.value = v; o.textContent = v + '월'; taxMonthSel.appendChild(o);
+  });
+  taxMonthSel.value = curTax;
 }
 
 function getFiltered() {
@@ -250,7 +264,8 @@ function getFiltered() {
   const status = document.getElementById('f-status').value;
   const client = document.getElementById('f-client').value;
   const year   = document.getElementById('f-year').value;
-  const type   = document.getElementById('f-type').value;
+  const type     = document.getElementById('f-type').value;
+  const taxmonth = document.getElementById('f-taxmonth').value;
 
   return allData.filter(d => {
     const c = getVal(d, '광고주').toLowerCase();
@@ -260,6 +275,10 @@ function getFiltered() {
     if (client && getVal(d, '광고주')  !== client) return false;
     if (year   && getVal(d, '시작연도') !== year)   return false;
     if (type   && getVal(d, '거래분류') !== type)   return false;
+    if (taxmonth) {
+      const tm = findVal(d, '세금계산서', '발행월') || findVal(d, '세금계산서발행월') || findVal(d, '세금계산서 발행월');
+      if (tm !== taxmonth) return false;
+    }
     return true;
   }).sort((a, b) => {
     let av = getVal(a, sortKey), bv = getVal(b, sortKey);
@@ -377,11 +396,11 @@ function sortBy(key) {
 
 function resetFilters() {
   document.getElementById('f-search').value = '';
-  ['f-status','f-client','f-year','f-type'].forEach(id => document.getElementById(id).selectedIndex = 0);
+  ['f-status','f-client','f-year','f-type','f-taxmonth'].forEach(id => document.getElementById(id).selectedIndex = 0);
   render();
 }
 
-['f-search','f-status','f-client','f-year','f-type'].forEach(id => {
+['f-search','f-status','f-client','f-year','f-type','f-taxmonth'].forEach(id => {
   document.getElementById(id).addEventListener('input', render);
   document.getElementById(id).addEventListener('change', render);
 });
