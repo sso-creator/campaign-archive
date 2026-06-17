@@ -463,7 +463,10 @@ function getFiltered() {
 function updateStats(data) {
   const d = data || allData;
   document.getElementById('s-total').textContent = d.length.toLocaleString();
-  document.getElementById('s-active').textContent = d.filter(r => getVal(r,'상태') === '진행중').length.toLocaleString();
+  document.getElementById('s-active').textContent = d.filter(r => {
+    const st = getVal(r,'상태');
+    return st === '집행중' || st === '진행중' || st === '집행전';
+  }).length.toLocaleString();
 
   const budgetKey = Object.keys(allData[0] || {}).find(k => k.includes('예산')) || '예산(VAT별도)';
   const total = d.reduce((acc, r) => {
