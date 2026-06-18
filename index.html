@@ -201,10 +201,13 @@
   }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 </head>
 <body>
 <div class="top-tabs">
   <button class="top-tab active" data-page="archive" onclick="showPage('archive')">집행현황 아카이브</button>
+  <button class="top-tab" data-page="routes" onclick="showPage('routes')">경로현황</button>
   <button class="top-tab" data-page="guide" onclick="showPage('guide')">들리Go 운영 가이드</button>
 </div>
 
@@ -281,6 +284,46 @@
 </div>
 </div>
 
+<div class="page-view" id="page-routes">
+<div class="shell">
+  <header class="site-header">
+    <h1>경로현황</h1>
+    <p id="routes-last-updated">데이터를 불러오는 중...</p>
+  </header>
+
+  <div id="routes-error-area"></div>
+
+  <div class="filter-bar">
+    <input type="search" id="rf-search" placeholder="광고주 / 지점 검색..." />
+    <select id="rf-use"><option value="">전체 사용여부</option></select>
+    <select id="rf-client"><option value="">전체 광고주</option></select>
+    <button class="reset-btn" onclick="resetRouteFilters()">초기화</button>
+  </div>
+
+  <div class="table-meta" id="routes-count"></div>
+
+  <div class="chart-wrap" style="padding:0; overflow:hidden;">
+    <div id="routes-map" style="width:100%; height:480px;"></div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:60px">사용</th>
+          <th style="width:170px">기간</th>
+          <th style="width:120px">광고주</th>
+          <th>지점</th>
+        </tr>
+      </thead>
+      <tbody id="routes-body">
+        <tr class="msg-row"><td colspan="4">데이터를 불러오는 중...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+</div>
+
 <div class="page-view" id="page-guide">
 <div class="shell">
   <header class="site-header">
@@ -335,9 +378,12 @@
 </div>
 
 <script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbxBhsWMBv4sHB8K6EHfvczmMWBZ4SeTRkoFNvGSnqOgwZZPQkZymAoqcMKgWcG1hmwj/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbx1AVYAW01WcvBLWQHQnkDDD5K1V1cLzdo9EXn7G4Oa34Q8PerBV0Ap-7arkdktShXr/exec';
 
 let allData = [];
+let routeRows = [];
+let routesMap = null;
+let routesMarkers = [];
 let sortKey = '시작일';
 let sortDir = -1;
 
@@ -366,6 +412,13 @@ async function fetchData() {
     renderDocs(json['수의계약서류'] || []);
     renderContacts(json['들리Go집행프로세스'] || []);
     renderOverview(json['들리Go집행프로세스'] || []);
+
+    // 경로현황 데이터
+    routeRows = json['경로현황'] || [];
+    const routesUpdatedEl = document.getElementById('routes-last-updated');
+    if (routesUpdatedEl) routesUpdatedEl.textContent = `마지막 업데이트 ${now} · 구글 시트 실시간 연동`;
+    populateRouteFilters();
+    renderRoutes();
   } catch(e) {
     document.getElementById('last-updated').textContent = '데이터 로드 실패';
     document.getElementById('error-area').innerHTML = `
@@ -663,6 +716,9 @@ function showPage(id) {
   document.querySelectorAll('.top-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('page-' + id).classList.add('active');
   document.querySelector(`.top-tab[data-page="${id}"]`).classList.add('active');
+  if (id === 'routes' && routesMap) {
+    setTimeout(() => routesMap.invalidateSize(), 50);
+  }
 }
 
 function showGuideSection(id) {
@@ -788,6 +844,142 @@ function renderOverview(rows) {
     </div>
   `).join('');
 }
+
+// ============ 경로현황 페이지 ============
+function rval(row, idx) {
+  return row[idx] !== undefined && row[idx] !== null ? String(row[idx]).trim() : '';
+}
+
+function getRouteDataRows() {
+  // 헤더는 1행, 2행은 공백일 수 있음 -> 위도(F,idx5)가 숫자인 행만 데이터로 인정
+  return routeRows.filter((r, i) => i > 0 && r && rval(r,3) && !isNaN(parseFloat(rval(r,5))) && !isNaN(parseFloat(rval(r,6))));
+}
+
+function populateRouteFilters() {
+  const dataRows = getRouteDataRows();
+  const useSel = document.getElementById('rf-use');
+  const clientSel = document.getElementById('rf-client');
+  if (!useSel || !clientSel) return;
+
+  const curUse = useSel.value, curClient = clientSel.value;
+  while (useSel.options.length > 1) useSel.remove(1);
+  while (clientSel.options.length > 1) clientSel.remove(1);
+
+  [...new Set(dataRows.map(r => rval(r,0)).filter(Boolean))].sort().forEach(v => {
+    const o = document.createElement('option'); o.value = v; o.textContent = v === 'O' ? '사용 (O)' : v === 'X' ? '미사용 (X)' : v;
+    useSel.appendChild(o);
+  });
+  [...new Set(dataRows.map(r => rval(r,3)).filter(Boolean))].sort().forEach(v => {
+    const o = document.createElement('option'); o.value = v; o.textContent = v;
+    clientSel.appendChild(o);
+  });
+  useSel.value = curUse;
+  clientSel.value = curClient;
+}
+
+function getFilteredRoutes() {
+  const search = (document.getElementById('rf-search')?.value || '').toLowerCase();
+  const use = document.getElementById('rf-use')?.value || '';
+  const client = document.getElementById('rf-client')?.value || '';
+
+  return getRouteDataRows().filter(r => {
+    const c = rval(r,3).toLowerCase(), p = rval(r,4).toLowerCase();
+    if (search && !c.includes(search) && !p.includes(search)) return false;
+    if (use && rval(r,0) !== use) return false;
+    if (client && rval(r,3) !== client) return false;
+    return true;
+  });
+}
+
+function resetRouteFilters() {
+  if (document.getElementById('rf-search')) document.getElementById('rf-search').value = '';
+  ['rf-use','rf-client'].forEach(id => { const el = document.getElementById(id); if (el) el.selectedIndex = 0; });
+  renderRoutes();
+}
+
+function renderRoutes() {
+  const data = getFilteredRoutes();
+  const countEl = document.getElementById('routes-count');
+  if (countEl) countEl.textContent = `${data.length.toLocaleString()}개 경로`;
+
+  // 표
+  const tbody = document.getElementById('routes-body');
+  if (tbody) {
+    if (!data.length) {
+      tbody.innerHTML = '<tr class="msg-row"><td colspan="4">조건에 맞는 경로가 없습니다.</td></tr>';
+    } else {
+      tbody.innerHTML = data.map(r => {
+        const use = rval(r,0);
+        const badge = use === 'O'
+          ? `<span class="badge badge-진행중">사용</span>`
+          : `<span class="badge badge-종료">미사용</span>`;
+        const period = (rval(r,1) && rval(r,2)) ? `${rval(r,1)} ~ ${rval(r,2)}` : (rval(r,1) || '-');
+        return `<tr>
+          <td>${badge}</td>
+          <td>${period}</td>
+          <td>${rval(r,3) || '-'}</td>
+          <td>${rval(r,4) || '-'}</td>
+        </tr>`;
+      }).join('');
+    }
+  }
+
+  // 지도
+  renderRoutesMap(data);
+}
+
+function renderRoutesMap(data) {
+  const mapEl = document.getElementById('routes-map');
+  if (!mapEl || typeof L === 'undefined') return;
+
+  if (!routesMap) {
+    routesMap = L.map('routes-map').setView([36.5, 127.8], 7);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+      maxZoom: 19
+    }).addTo(routesMap);
+  }
+
+  // 기존 마커 제거
+  routesMarkers.forEach(m => routesMap.removeLayer(m));
+  routesMarkers = [];
+
+  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const activeColor = isDark ? '#7fa8f5' : '#2c5fbd';
+  const inactiveColor = isDark ? '#6a6865' : '#b8b6b0';
+
+  const bounds = [];
+  data.forEach(r => {
+    const lat = parseFloat(rval(r,5));
+    const lng = parseFloat(rval(r,6));
+    if (isNaN(lat) || isNaN(lng)) return;
+    const isActive = rval(r,0) === 'O';
+    const marker = L.circleMarker([lat, lng], {
+      radius: 6,
+      color: isActive ? activeColor : inactiveColor,
+      fillColor: isActive ? activeColor : inactiveColor,
+      fillOpacity: 0.7,
+      weight: 1.5
+    }).addTo(routesMap);
+
+    const period = (rval(r,1) && rval(r,2)) ? `${rval(r,1)} ~ ${rval(r,2)}` : '';
+    marker.bindPopup(`<b>${rval(r,3)}</b><br>${rval(r,4)}<br><span style="color:${isActive?activeColor:inactiveColor}">${isActive?'사용중':'미사용'}</span> · ${period}`);
+    routesMarkers.push(marker);
+    bounds.push([lat, lng]);
+  });
+
+  if (bounds.length) {
+    routesMap.fitBounds(bounds, { padding: [24, 24], maxZoom: 12 });
+  }
+}
+
+['rf-search','rf-use','rf-client'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) {
+    el.addEventListener('input', renderRoutes);
+    el.addEventListener('change', renderRoutes);
+  }
+});
 
 fetchData();
 setInterval(fetchData, 5 * 60 * 1000);
