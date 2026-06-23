@@ -233,7 +233,7 @@
 
   <div class="chart-wrap">
     <div class="chart-title">
-      <span>월별 광고비 집행 현황</span>
+      <span>월별 광고비 집행 현황 (세금계산서 발행 기준)</span>
       <div class="chart-year-tabs" id="year-tabs"></div>
     </div>
     <div class="chart-canvas-wrap">
@@ -634,7 +634,10 @@ let budgetChart = null;
 let chartYear = null;
 
 function buildChart(data) {
-  const years = [...new Set(data.map(d => getVal(d,'시작연도')).filter(Boolean))].sort();
+  // 세금계산서 발행연도 기준으로 연도 탭 생성
+  const years = [...new Set(data.map(d => {
+    return findVal(d, '세금계산서', '발행연도') || findVal(d, '세금계산서발행연도') || findVal(d, '세금계산서 발행연도');
+  }).filter(Boolean))].sort();
   if (!chartYear || !years.includes(chartYear)) chartYear = years[years.length - 1] || null;
 
   // Year tabs
@@ -647,8 +650,11 @@ function buildChart(data) {
   const monthlyData = {};
   for (let m = 1; m <= 12; m++) monthlyData[m] = 0;
 
-  data.filter(d => getVal(d,'시작연도') === chartYear).forEach(d => {
-    const m = parseInt(getVal(d,'시작월'));
+  data.forEach(d => {
+    const taxYear  = findVal(d, '세금계산서', '발행연도') || findVal(d, '세금계산서발행연도') || findVal(d, '세금계산서 발행연도');
+    const taxMonth = findVal(d, '세금계산서', '발행월')   || findVal(d, '세금계산서발행월')   || findVal(d, '세금계산서 발행월');
+    if (taxYear !== chartYear || !taxMonth) return;
+    const m = parseInt(String(taxMonth).replace(/[^0-9]/g,''));
     const b = parseFloat(String(getVal(d, budgetKey)).replace(/[^0-9.]/g,'')) || 0;
     if (m >= 1 && m <= 12) monthlyData[m] += b;
   });
