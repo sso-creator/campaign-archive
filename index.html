@@ -62,7 +62,7 @@
   .reset-btn:hover { background: var(--surface2); }
   .table-meta { font-size: 13px; color: var(--text3); margin-bottom: 8px; }
   .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 960px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 1100px; }
   thead th {
     background: var(--surface2); color: var(--text2); font-weight: 500; font-size: 12px;
     padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border);
@@ -208,6 +208,7 @@
 <div class="top-tabs">
   <button class="top-tab active" data-page="archive" onclick="showPage('archive')">집행현황 아카이브</button>
   <button class="top-tab" data-page="routes" onclick="showPage('routes')">경로현황</button>
+  <button class="top-tab" data-page="material" onclick="showPage('material')">소재현황</button>
   <button class="top-tab" data-page="guide" onclick="showPage('guide')">들리Go 운영 가이드</button>
 </div>
 
@@ -324,6 +325,60 @@
 </div>
 </div>
 
+<div class="page-view" id="page-material">
+<div class="shell">
+  <header class="site-header">
+    <div>
+      <h1>소재현황</h1>
+      <p id="material-last-updated">데이터를 불러오는 중...</p>
+    </div>
+  </header>
+
+  <!-- 써머리 -->
+  <div class="stats">
+    <div class="stat"><div class="stat-label">전체 소재</div><div class="stat-value" id="ms-total">—</div></div>
+    <div class="stat"><div class="stat-label">광고주 수</div><div class="stat-value" id="ms-clients">—</div></div>
+    <div class="stat"><div class="stat-label">총 제작비용</div><div class="stat-value" id="ms-cost">—</div></div>
+    <div class="stat"><div class="stat-label">평균 글자수</div><div class="stat-value" id="ms-chars">—</div></div>
+  </div>
+
+  <!-- 필터 -->
+  <div class="filter-bar">
+    <input type="search" id="mf-search" placeholder="광고주 / 문구 검색..." />
+    <select id="mf-year"><option value="">전체 연도</option></select>
+    <select id="mf-month"><option value="">전체 정산월</option></select>
+    <select id="mf-client"><option value="">전체 광고주</option></select>
+    <select id="mf-voice"><option value="">전체 성우</option></select>
+    <button class="reset-btn" onclick="resetMaterialFilters()">초기화</button>
+  </div>
+
+  <div class="table-meta" id="material-count"></div>
+
+  <!-- 테이블 -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:60px" onclick="materialSortBy('연도')">연도 <span class="arr" id="marr-연도"></span></th>
+          <th style="width:60px" onclick="materialSortBy('정산월')">정산월 <span class="arr" id="marr-정산월"></span></th>
+          <th style="width:100px">발행일</th>
+          <th style="width:120px" onclick="materialSortBy('광고주')">광고주 <span class="arr" id="marr-광고주"></span></th>
+          <th style="width:90px">기간</th>
+          <th style="width:90px">성우</th>
+          <th style="width:90px; text-align:right" onclick="materialSortBy('비용(VAT별도)')">비용(VAT별도) <span class="arr" id="marr-비용(VAT별도)"></span></th>
+          <th style="width:50px; text-align:right" onclick="materialSortBy('글자수')">글자수 <span class="arr" id="marr-글자수"></span></th>
+          <th>문구</th>
+          <th style="width:80px">비고</th>
+        </tr>
+      </thead>
+      <tbody id="material-body">
+        <tr class="msg-row"><td colspan="10">데이터를 불러오는 중...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+</div>
+
 <div class="page-view" id="page-guide">
 <div class="shell">
   <header class="site-header">
@@ -378,10 +433,13 @@
 </div>
 
 <script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbx1AVYAW01WcvBLWQHQnkDDD5K1V1cLzdo9EXn7G4Oa34Q8PerBV0Ap-7arkdktShXr/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbxxTGgTNtyoR1gMow53zFaEmkSHaypkdh5BY-LfeiItLqq2BDDjWAc_UaongAfTXpAg/exec';
 
 let allData = [];
 let routeRows = [];
+let materialData = [];
+let materialSortKey = '연도';
+let materialSortDir = 1;
 let routesMap = null;
 let routesMarkers = [];
 let sortKey = '시작일';
@@ -419,6 +477,13 @@ async function fetchData() {
     if (routesUpdatedEl) routesUpdatedEl.textContent = `마지막 업데이트 ${now} · 구글 시트 실시간 연동`;
     populateRouteFilters();
     renderRoutes();
+
+    // 소재현황
+    materialData = Array.isArray(json['음원제작리스트']) ? json['음원제작리스트'].filter(r => r['광고주']) : [];
+    const matUpdatedEl = document.getElementById('material-last-updated');
+    if (matUpdatedEl) matUpdatedEl.textContent = `마지막 업데이트 ${now} · 구글 시트 실시간 연동`;
+    populateMaterialFilters();
+    renderMaterial();
   } catch(e) {
     document.getElementById('last-updated').textContent = '데이터 로드 실패';
     document.getElementById('error-area').innerHTML = `
@@ -984,6 +1049,153 @@ function renderRoutesMap(data) {
   if (el) {
     el.addEventListener('input', renderRoutes);
     el.addEventListener('change', renderRoutes);
+  }
+});
+
+// ============ 소재현황 페이지 ============
+function mval(row, key) {
+  if (row[key] !== undefined && row[key] !== null) return String(row[key]).trim();
+  // 공백 차이 허용: "비용(VAT 별도)" vs "비용(VAT별도)"
+  const fuzzy = Object.keys(row).find(k => k.replace(/\s/g,'') === key.replace(/\s/g,''));
+  return fuzzy && row[fuzzy] !== null ? String(row[fuzzy]).trim() : '';
+}
+
+function populateMaterialFilters() {
+  const add = (id, key) => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const cur = sel.value;
+    while (sel.options.length > 1) sel.remove(1);
+    const vals = [...new Set(materialData.map(d => mval(d, key)).filter(Boolean))];
+    // 월/연도는 숫자 정렬, 나머지는 가나다순
+    if (key === '정산월' || key === '연도') vals.sort((a,b) => parseFloat(a)-parseFloat(b));
+    else vals.sort();
+    vals.forEach(v => {
+      const o = document.createElement('option');
+      o.value = v; o.textContent = key === '정산월' ? String(v).replace(/월$/, '') + '월' : v;
+      sel.appendChild(o);
+    });
+    sel.value = cur;
+  };
+  add('mf-year',   '연도');
+  add('mf-month',  '정산월');
+  add('mf-client', '광고주');
+  add('mf-voice',  '성우');
+}
+
+function getFilteredMaterial() {
+  const search = (document.getElementById('mf-search')?.value || '').toLowerCase();
+  const year   = document.getElementById('mf-year')?.value   || '';
+  const month  = document.getElementById('mf-month')?.value  || '';
+  const client = document.getElementById('mf-client')?.value || '';
+  const voice  = document.getElementById('mf-voice')?.value  || '';
+
+  return materialData.filter(d => {
+    if (search && !mval(d,'광고주').toLowerCase().includes(search) && !mval(d,'문구').toLowerCase().includes(search)) return false;
+    if (year   && mval(d,'연도')   !== year)   return false;
+    if (month  && mval(d,'정산월') !== month)  return false;
+    if (client && mval(d,'광고주') !== client) return false;
+    if (voice  && mval(d,'성우')   !== voice)  return false;
+    return true;
+  }).sort((a, b) => {
+    let av = mval(a, materialSortKey), bv = mval(b, materialSortKey);
+    const numKeys = ['연도','정산월','비용(VAT별도)','글자수'];
+    if (numKeys.includes(materialSortKey)) {
+      av = parseFloat(String(av).replace(/[^0-9.]/g,'')) || 0;
+      bv = parseFloat(String(bv).replace(/[^0-9.]/g,'')) || 0;
+    }
+    if (av !== bv) return av < bv ? materialSortDir : -materialSortDir;
+    // 보조 정렬: 연도 기준일 때 정산월, 정산월 기준일 때 연도 순
+    if (materialSortKey === '연도') {
+      const am = parseFloat(String(mval(a,'정산월')).replace(/[^0-9]/g,'')) || 0;
+      const bm = parseFloat(String(mval(b,'정산월')).replace(/[^0-9]/g,'')) || 0;
+      return am - bm;
+    }
+    return 0;
+  });
+}
+
+function updateMaterialStats(data) {
+  document.getElementById('ms-total').textContent = data.length.toLocaleString();
+  document.getElementById('ms-clients').textContent = new Set(data.map(d => mval(d,'광고주')).filter(Boolean)).size;
+  const totalCost = data.reduce((acc, d) => acc + (parseFloat(String(mval(d,'비용(VAT별도)')).replace(/[^0-9.]/g,'')) || 0), 0);
+  document.getElementById('ms-cost').textContent = totalCost >= 100000000
+    ? Math.round(totalCost/100000000) + '억'
+    : Math.round(totalCost/10000) + '만';
+  const chars = data.map(d => parseFloat(mval(d,'글자수')) || 0).filter(v => v > 0);
+  document.getElementById('ms-chars').textContent = chars.length
+    ? Math.round(chars.reduce((a,b) => a+b, 0) / chars.length) + '자'
+    : '—';
+}
+
+function renderMaterial() {
+  const data = getFilteredMaterial();
+  updateMaterialStats(data);
+  const countEl = document.getElementById('material-count');
+  if (countEl) countEl.textContent = `${data.length.toLocaleString()}개 소재`;
+
+  // 초기 정렬 화살표 표시
+  const arrEl = document.getElementById('marr-' + materialSortKey);
+  if (arrEl && !arrEl.textContent) arrEl.textContent = materialSortDir === 1 ? ' ↑' : ' ↓';
+
+  const tbody = document.getElementById('material-body');
+  if (!tbody) return;
+
+  if (!data.length) {
+    tbody.innerHTML = '<tr class="msg-row"><td colspan="10">조건에 맞는 소재가 없습니다.</td></tr>';
+    return;
+  }
+
+  const fmt = v => {
+    const n = parseFloat(String(v).replace(/[^0-9.]/g,''));
+    return n ? n.toLocaleString('ko-KR') : '-';
+  };
+
+  tbody.innerHTML = data.map(d => {
+    const period = (mval(d,'시작일') && mval(d,'종료일'))
+      ? `${mval(d,'시작일').substring(0,10)} ~<br>${mval(d,'종료일').substring(0,10)}`
+      : (mval(d,'시작일').substring(0,10) || '-');
+    const script = mval(d,'문구');
+    const chars = mval(d,'글자수');
+    return `<tr>
+      <td>${mval(d,'연도') || '-'}</td>
+      <td>${mval(d,'정산월') ? String(mval(d,'정산월')).replace(/월$/, '') + '월' : '-'}</td>
+      <td>${mval(d,'발행일').substring(0,10) || '-'}</td>
+      <td title="${mval(d,'광고주')}">${mval(d,'광고주') || '-'}</td>
+      <td style="font-size:11px; line-height:1.5">${period}</td>
+      <td>${mval(d,'성우') || '-'}</td>
+      <td class="num">${fmt(mval(d,'비용(VAT별도)'))}</td>
+      <td class="num">${chars || '-'}</td>
+      <td style="font-size:13px; min-width:280px; white-space:normal; line-height:1.7; word-break:keep-all">${script || '-'}</td>
+      <td style="font-size:12px; white-space:normal !important; overflow:visible; word-break:keep-all; line-height:1.6; min-width:80px; max-width:150px">${mval(d,'비고') || '-'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function materialSortBy(key) {
+  materialSortDir = materialSortKey === key ? materialSortDir * -1 : -1;
+  materialSortKey = key;
+  document.querySelectorAll('[id^="marr-"]').forEach(el => el.textContent = '');
+  const el = document.getElementById('marr-' + key);
+  if (el) el.textContent = materialSortDir === -1 ? ' ↓' : ' ↑';
+  renderMaterial();
+}
+
+function resetMaterialFilters() {
+  const el = document.getElementById('mf-search');
+  if (el) el.value = '';
+  ['mf-year','mf-month','mf-client','mf-voice'].forEach(id => {
+    const s = document.getElementById(id);
+    if (s) s.selectedIndex = 0;
+  });
+  renderMaterial();
+}
+
+['mf-search','mf-year','mf-month','mf-client','mf-voice'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) {
+    el.addEventListener('input', renderMaterial);
+    el.addEventListener('change', renderMaterial);
   }
 });
 
