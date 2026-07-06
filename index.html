@@ -616,7 +616,13 @@ function fmtBudget(d) {
 
 function fmtDate(raw) {
   if (!raw) return '-';
-  const s = String(raw);
+  const s = String(raw).trim();
+  // ISO 형식(T 포함) -> KST +9 보정
+  if (/T/.test(s)) {
+    const d = new Date(s);
+    const kst = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+    return kst.toISOString().substring(0, 10);
+  }
   const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (m) return `${m[1]}-${m[2]}-${m[3]}`;
   return s;
@@ -1060,6 +1066,22 @@ function mval(row, key) {
   return fuzzy && row[fuzzy] !== null ? String(row[fuzzy]).trim() : '';
 }
 
+function fmtDateKST(raw) {
+  if (!raw) return '-';
+  const s = String(raw).trim();
+  // ISO 날짜 형식(2026-07-31T00:00:00.000Z) -> UTC+9 보정
+  const m = s.match(/^(\d{4}-\d{2}-\d{2})T/);
+  if (m) {
+    // Date 객체로 파싱 후 KST(+9) 오프셋 적용
+    const d = new Date(s);
+    const kst = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+    return kst.toISOString().substring(0, 10);
+  }
+  // 이미 YYYY-MM-DD 형태면 그대로
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.substring(0, 10);
+  return s;
+}
+
 function populateMaterialFilters() {
   const add = (id, key) => {
     const sel = document.getElementById(id);
@@ -1153,14 +1175,14 @@ function renderMaterial() {
 
   tbody.innerHTML = data.map(d => {
     const period = (mval(d,'시작일') && mval(d,'종료일'))
-      ? `${mval(d,'시작일').substring(0,10)} ~<br>${mval(d,'종료일').substring(0,10)}`
-      : (mval(d,'시작일').substring(0,10) || '-');
+      ? `${fmtDateKST(mval(d,'시작일'))} ~<br>${fmtDateKST(mval(d,'종료일'))}`
+      : (fmtDateKST(mval(d,'시작일')) || '-');
     const script = mval(d,'문구');
     const chars = mval(d,'글자수');
     return `<tr>
       <td>${mval(d,'연도') || '-'}</td>
       <td>${mval(d,'정산월') ? String(mval(d,'정산월')).replace(/월$/, '') + '월' : '-'}</td>
-      <td>${mval(d,'발행일').substring(0,10) || '-'}</td>
+      <td>${fmtDateKST(mval(d,'발행일')) || '-'}</td>
       <td title="${mval(d,'광고주')}">${mval(d,'광고주') || '-'}</td>
       <td style="font-size:11px; line-height:1.5">${period}</td>
       <td>${mval(d,'성우') || '-'}</td>
