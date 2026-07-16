@@ -28,7 +28,7 @@
     }
   }
   html { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 15px; line-height: 1.6; }
-  .shell { max-width: 1200px; margin: 0 auto; padding: 0 24px 60px; }
+  .shell { max-width: 1600px; margin: 0 auto; padding: 0 24px 60px; }
   .site-header {
     padding: 32px 0 28px; border-bottom: 1px solid var(--border); margin-bottom: 28px;
     display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 12px;
@@ -109,6 +109,12 @@
   tbody tr:last-child { border-bottom: none; }
   tbody tr:hover { background: var(--surface2); }
   tbody td { padding: 10px 14px; vertical-align: middle; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .routes-table td:nth-child(2), .routes-table td:nth-child(5) {
+    white-space: normal; overflow: visible; text-overflow: unset; max-width: 320px; word-break: keep-all; line-height: 1.5;
+  }
+  .routes-table td:nth-child(4) {
+    white-space: nowrap; overflow: visible; text-overflow: unset; max-width: none;
+  }
   td.num { text-align: right; font-variant-numeric: tabular-nums; }
   .badge { display: inline-block; font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 99px; }
   .badge-종료 { background: var(--gray-bg); color: var(--gray); }
@@ -121,6 +127,7 @@
     .badge-직접 { background: #04342C; color: #5DCAA5; }
   }
   .arr { font-size: 10px; opacity: 0.45; margin-left: 2px; }
+  .addr-loading { color: var(--text3); font-style: italic; }
   .msg-row td { text-align: center; padding: 48px; color: var(--text3); font-size: 14px; }
   .error-box {
     background: #fff0f0; border: 1px solid #fcc; border-radius: 10px;
@@ -362,17 +369,18 @@
   </div>
 
   <div class="table-wrap">
-    <table>
+    <table class="routes-table">
       <thead>
         <tr>
           <th style="width:60px">사용</th>
-          <th style="width:170px">기간</th>
+          <th style="width:260px">기간</th>
           <th style="width:120px">광고주</th>
-          <th>지점</th>
+          <th style="width:340px">지점</th>
+          <th>주소</th>
         </tr>
       </thead>
       <tbody id="routes-body">
-        <tr class="msg-row"><td colspan="4">데이터를 불러오는 중...</td></tr>
+        <tr class="msg-row"><td colspan="5">데이터를 불러오는 중...</td></tr>
       </tbody>
     </table>
   </div>
@@ -410,14 +418,14 @@
 
   <!-- 테이블 -->
   <div class="table-wrap">
-    <table>
+    <table class="material-table">
       <thead>
         <tr>
           <th style="width:60px" onclick="materialSortBy('연도')">연도 <span class="arr" id="marr-연도"></span></th>
           <th style="width:60px" onclick="materialSortBy('정산월')">정산월 <span class="arr" id="marr-정산월"></span></th>
           <th style="width:100px">발행일</th>
-          <th style="width:120px" onclick="materialSortBy('광고주')">광고주 <span class="arr" id="marr-광고주"></span></th>
-          <th style="width:90px">기간</th>
+          <th style="width:150px" onclick="materialSortBy('광고주')">광고주 <span class="arr" id="marr-광고주"></span></th>
+          <th style="width:170px">기간</th>
           <th style="width:90px">성우</th>
           <th style="width:90px; text-align:right" onclick="materialSortBy('비용(VAT별도)')">비용(VAT별도) <span class="arr" id="marr-비용(VAT별도)"></span></th>
           <th style="width:50px; text-align:right" onclick="materialSortBy('글자수')">글자수 <span class="arr" id="marr-글자수"></span></th>
@@ -1208,26 +1216,83 @@ function renderRoutes() {
   const tbody = document.getElementById('routes-body');
   if (tbody) {
     if (!data.length) {
-      tbody.innerHTML = '<tr class="msg-row"><td colspan="4">조건에 맞는 경로가 없습니다.</td></tr>';
+      tbody.innerHTML = '<tr class="msg-row"><td colspan="5">조건에 맞는 경로가 없습니다.</td></tr>';
     } else {
-      tbody.innerHTML = data.map(r => {
+      tbody.innerHTML = data.map((r, i) => {
         const use = rval(r,0);
         const badge = use === 'O'
           ? `<span class="badge badge-진행중">사용</span>`
           : `<span class="badge badge-종료">미사용</span>`;
         const period = (rval(r,1) && rval(r,2)) ? `${rval(r,1)} ~ ${rval(r,2)}` : (rval(r,1) || '-');
+        const sheetAddr = rval(r,7);
+        const lat = parseFloat(rval(r,5)), lng = parseFloat(rval(r,6));
+        const cached = (!isNaN(lat) && !isNaN(lng)) ? routeAddrCache[addrCacheKey(lat, lng)] : null;
+        const resolvedAddr = sheetAddr || cached;
+        const addrHtml = resolvedAddr
+          ? msEscape(resolvedAddr)
+          : ((!isNaN(lat) && !isNaN(lng)) ? '<span class="addr-loading">주소 조회 중...</span>' : '-');
         return `<tr>
           <td>${badge}</td>
           <td>${period}</td>
           <td>${rval(r,3) || '-'}</td>
           <td>${rval(r,4) || '-'}</td>
+          <td id="route-addr-${i}" title="${resolvedAddr ? msEscape(resolvedAddr) : ''}">${addrHtml}</td>
         </tr>`;
       }).join('');
+      loadRouteAddresses(data);
     }
   }
 
   // 지도
   renderRoutesMap(data);
+}
+
+// ---- 위경도 → 주소 역지오코딩 (OpenStreetMap Nominatim, 무료/키불필요) ----
+const ROUTE_ADDR_CACHE_KEY = 'routeAddrCache_v1';
+let routeAddrCache = {};
+try { routeAddrCache = JSON.parse(localStorage.getItem(ROUTE_ADDR_CACHE_KEY) || '{}'); } catch (e) { routeAddrCache = {}; }
+
+function addrCacheKey(lat, lng) {
+  return `${lat.toFixed(5)},${lng.toFixed(5)}`;
+}
+
+async function reverseGeocode(lat, lng) {
+  const key = addrCacheKey(lat, lng);
+  if (routeAddrCache[key]) return routeAddrCache[key];
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=ko&zoom=18`);
+    if (!res.ok) throw new Error('geocode failed');
+    const json = await res.json();
+    const addr = json.display_name || '';
+    routeAddrCache[key] = addr;
+    try { localStorage.setItem(ROUTE_ADDR_CACHE_KEY, JSON.stringify(routeAddrCache)); } catch (e) {}
+    return addr;
+  } catch (e) {
+    return '';
+  }
+}
+
+// 화면에 표가 이미 그려진 뒤, 캐시에 없는 좌표만 순차적으로(초당 1건, Nominatim 정책 준수) 조회해서 채워넣음
+async function loadRouteAddresses(data) {
+  for (let i = 0; i < data.length; i++) {
+    const r = data[i];
+    if (rval(r,7)) continue; // 시트(H열)에 주소가 이미 있으면 조회하지 않음
+    const lat = parseFloat(rval(r,5)), lng = parseFloat(rval(r,6));
+    if (isNaN(lat) || isNaN(lng)) continue;
+    const key = addrCacheKey(lat, lng);
+    const cell = document.getElementById(`route-addr-${i}`);
+    if (routeAddrCache[key]) {
+      if (cell) { cell.textContent = routeAddrCache[key]; cell.title = routeAddrCache[key]; }
+      continue;
+    }
+    const addr = await reverseGeocode(lat, lng);
+    const cellNow = document.getElementById(`route-addr-${i}`);
+    if (cellNow) {
+      cellNow.textContent = addr || '주소 확인 불가';
+      cellNow.title = addr || '';
+    }
+    await new Promise(resolve => setTimeout(resolve, 1100));
+  }
 }
 
 function renderRoutesMap(data) {
@@ -1400,7 +1465,7 @@ function renderMaterial() {
 
   tbody.innerHTML = data.map(d => {
     const period = (mval(d,'시작일') && mval(d,'종료일'))
-      ? `${fmtDateKST(mval(d,'시작일'))} ~<br>${fmtDateKST(mval(d,'종료일'))}`
+      ? `${fmtDateKST(mval(d,'시작일'))} ~ ${fmtDateKST(mval(d,'종료일'))}`
       : (fmtDateKST(mval(d,'시작일')) || '-');
     const script = mval(d,'문구');
     const chars = mval(d,'글자수');
@@ -1408,8 +1473,8 @@ function renderMaterial() {
       <td>${mval(d,'연도') || '-'}</td>
       <td>${mval(d,'정산월') ? String(mval(d,'정산월')).replace(/월$/, '') + '월' : '-'}</td>
       <td>${fmtDateKST(mval(d,'발행일')) || '-'}</td>
-      <td title="${mval(d,'광고주')}">${mval(d,'광고주') || '-'}</td>
-      <td style="font-size:11px; line-height:1.5">${period}</td>
+      <td title="${mval(d,'광고주')}" style="white-space:nowrap; max-width:none; overflow:visible; text-overflow:unset">${mval(d,'광고주') || '-'}</td>
+      <td style="font-size:12px; white-space:nowrap; max-width:none; overflow:visible; text-overflow:unset">${period}</td>
       <td>${mval(d,'성우') || '-'}</td>
       <td class="num">${fmt(mval(d,'비용(VAT별도)'))}</td>
       <td class="num">${chars || '-'}</td>
