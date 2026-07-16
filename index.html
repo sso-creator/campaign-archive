@@ -55,6 +55,42 @@
   }
   .filter-bar input { min-width: 200px; }
   .filter-bar input:focus, .filter-bar select:focus { border-color: var(--accent); }
+  .multiselect { position: relative; }
+  .multiselect-toggle {
+    font-family: var(--font); font-size: 13px; color: var(--text); background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 7px; padding: 6px 10px; height: 34px; cursor: pointer;
+  }
+  .multiselect.open .multiselect-toggle { border-color: var(--accent); }
+  .multiselect-menu {
+    display: none; position: absolute; top: calc(100% + 4px); left: 0; z-index: 20; width: 220px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15); overflow: hidden;
+  }
+  .multiselect.open .multiselect-menu { display: block; }
+  .ms-header {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 9px 12px; font-size: 11.5px; color: var(--text3); border-bottom: 1px solid var(--border);
+  }
+  .ms-header-actions { display: flex; align-items: center; gap: 5px; }
+  .ms-link { color: var(--accent); text-decoration: none; cursor: pointer; }
+  .ms-link:hover { text-decoration: underline; }
+  .ms-sep { color: var(--text3); }
+  .ms-count { white-space: nowrap; }
+  .ms-search-wrap { position: relative; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  .ms-search {
+    width: 100%; font-family: var(--font); font-size: 12.5px; color: var(--text);
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 6px;
+    padding: 6px 26px 6px 9px; height: 30px; outline: none; box-sizing: border-box;
+  }
+  .ms-search:focus { border-color: var(--accent); }
+  .ms-search-icon { position: absolute; right: 19px; top: 50%; transform: translateY(-50%); color: var(--text3); font-size: 13px; pointer-events: none; }
+  .ms-options { max-height: 220px; overflow-y: auto; padding: 4px; }
+  .ms-option {
+    display: flex; align-items: center; gap: 9px; padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: 13px; white-space: nowrap;
+  }
+  .ms-option:hover { background: var(--surface2); }
+  .ms-check { width: 13px; flex-shrink: 0; color: var(--accent); font-size: 12px; font-weight: 700; text-align: center; }
+  .ms-empty { padding: 16px 8px; text-align: center; font-size: 12.5px; color: var(--text3); }
   .reset-btn {
     font-family: var(--font); font-size: 13px; color: var(--text2); background: transparent;
     border: 1px solid var(--border2); border-radius: 7px; padding: 0 12px; height: 34px; cursor: pointer;
@@ -244,12 +280,30 @@
 
   <div class="filter-bar">
     <input type="search" id="f-search" placeholder="캠페인명 / 광고주 검색..." />
-    <select id="f-status"><option value="">전체 상태</option></select>
-    <select id="f-client"><option value="">전체 광고주</option></select>
-    <select id="f-agency"><option value="">전체 대행사</option></select>
-    <select id="f-year"><option value="">전체 연도</option></select>
-    <select id="f-type"><option value="">전체 거래분류</option></select>
-    <select id="f-taxmonth"><option value="">전체 세금계산서 월</option></select>
+    <div class="multiselect" id="f-status">
+      <button type="button" class="multiselect-toggle" id="f-status-toggle">전체 상태</button>
+      <div class="multiselect-menu" id="f-status-menu"></div>
+    </div>
+    <div class="multiselect" id="f-client">
+      <button type="button" class="multiselect-toggle" id="f-client-toggle">전체 광고주</button>
+      <div class="multiselect-menu" id="f-client-menu"></div>
+    </div>
+    <div class="multiselect" id="f-agency">
+      <button type="button" class="multiselect-toggle" id="f-agency-toggle">전체 대행사</button>
+      <div class="multiselect-menu" id="f-agency-menu"></div>
+    </div>
+    <div class="multiselect" id="f-year">
+      <button type="button" class="multiselect-toggle" id="f-year-toggle">전체 연도</button>
+      <div class="multiselect-menu" id="f-year-menu"></div>
+    </div>
+    <div class="multiselect" id="f-type">
+      <button type="button" class="multiselect-toggle" id="f-type-toggle">전체 거래분류</button>
+      <div class="multiselect-menu" id="f-type-menu"></div>
+    </div>
+    <div class="multiselect" id="f-taxmonth">
+      <button type="button" class="multiselect-toggle" id="f-taxmonth-toggle">전체 세금계산서 월</button>
+      <div class="multiselect-menu" id="f-taxmonth-menu"></div>
+    </div>
     <button class="reset-btn" onclick="resetFilters()">초기화</button>
   </div>
 
@@ -444,6 +498,12 @@ let routesMap = null;
 let routesMarkers = [];
 let sortKey = '시작일';
 let sortDir = -1;
+let selectedStatuses = [];
+let selectedTaxMonths = [];
+let selectedClients = [];
+let selectedAgencies = [];
+let selectedYears = [];
+let selectedTypes = [];
 
 async function fetchData() {
   document.getElementById('last-updated').textContent = '데이터를 불러오는 중...';
@@ -507,64 +567,227 @@ function findVal(row, ...keywords) {
 }
 
 function populateFilters() {
-  const add = (id, key) => {
-    const sel = document.getElementById(id);
-    const cur = sel.value;
-    while (sel.options.length > 1) sel.remove(1);
-    [...new Set(allData.map(d => getVal(d, key)).filter(Boolean))].sort().forEach(v => {
-      const o = document.createElement('option');
-      o.value = v; o.textContent = v; sel.appendChild(o);
-    });
-    sel.value = cur;
-  };
-  add('f-status', '상태');
-  add('f-client', '광고주');
-  add('f-agency', '대행사');
-  add('f-year',   '시작연도');
-  add('f-type',   '거래분류');
-
-  // 세금계산서 발행월 필터 (숫자 정렬)
-  const taxMonthSel = document.getElementById('f-taxmonth');
-  const curTax = taxMonthSel.value;
-  while (taxMonthSel.options.length > 1) taxMonthSel.remove(1);
-  const taxMonths = [...new Set(allData.map(d => {
-    return findVal(d, '세금계산서', '발행월') || findVal(d, '세금계산서발행월') || findVal(d, '세금계산서 발행월');
-  }).filter(Boolean))].sort((a,b) => parseFloat(a)-parseFloat(b));
-  taxMonths.forEach(v => {
-    const o = document.createElement('option');
-    const label = String(v).replace(/월$/, '') + '월';
-    o.value = v; o.textContent = label; taxMonthSel.appendChild(o);
-  });
-  taxMonthSel.value = curTax;
+  ['status','client','agency','year','type','taxmonth'].forEach(kind => populateGenericFilter(kind));
 }
+
+// ---- 다중선택 드롭다운 (상태 / 세금계산서 월 공용) ----
+const MS_CONFIG = {
+  status: {
+    menuId: 'f-status-menu', toggleId: 'f-status-toggle',
+    getOptions: () => [...new Set(allData.map(d => getVal(d, '상태')).filter(Boolean))].sort(),
+    getSelected: () => selectedStatuses,
+    setSelected: (arr) => { selectedStatuses = arr; },
+    formatLabel: v => v,
+    emptyLabel: '전체 상태',
+    singleFormat: v => v,
+    pluralFormat: n => `상태 ${n}개`
+  },
+  taxmonth: {
+    menuId: 'f-taxmonth-menu', toggleId: 'f-taxmonth-toggle',
+    getOptions: () => [...new Set(allData.map(d => {
+      return findVal(d, '세금계산서', '발행월') || findVal(d, '세금계산서발행월') || findVal(d, '세금계산서 발행월');
+    }).filter(Boolean))].sort((a,b) => parseFloat(a)-parseFloat(b)),
+    getSelected: () => selectedTaxMonths,
+    setSelected: (arr) => { selectedTaxMonths = arr; },
+    formatLabel: v => String(v).replace(/월$/, '') + '월',
+    emptyLabel: '전체 세금계산서 월',
+    singleFormat: v => String(v).replace(/월$/, '') + '월',
+    pluralFormat: n => `세금계산서 월 ${n}개`
+  },
+  client: {
+    menuId: 'f-client-menu', toggleId: 'f-client-toggle',
+    getOptions: () => [...new Set(allData.map(d => getVal(d, '광고주')).filter(Boolean))].sort(),
+    getSelected: () => selectedClients,
+    setSelected: (arr) => { selectedClients = arr; },
+    formatLabel: v => v,
+    emptyLabel: '전체 광고주',
+    singleFormat: v => v,
+    pluralFormat: n => `광고주 ${n}개`
+  },
+  agency: {
+    menuId: 'f-agency-menu', toggleId: 'f-agency-toggle',
+    getOptions: () => [...new Set(allData.map(d => getVal(d, '대행사')).filter(Boolean))].sort(),
+    getSelected: () => selectedAgencies,
+    setSelected: (arr) => { selectedAgencies = arr; },
+    formatLabel: v => v,
+    emptyLabel: '전체 대행사',
+    singleFormat: v => v,
+    pluralFormat: n => `대행사 ${n}개`
+  },
+  year: {
+    menuId: 'f-year-menu', toggleId: 'f-year-toggle',
+    getOptions: () => [...new Set(allData.map(d => getVal(d, '시작연도')).filter(Boolean))].sort(),
+    getSelected: () => selectedYears,
+    setSelected: (arr) => { selectedYears = arr; },
+    formatLabel: v => v,
+    emptyLabel: '전체 연도',
+    singleFormat: v => v,
+    pluralFormat: n => `연도 ${n}개`
+  },
+  type: {
+    menuId: 'f-type-menu', toggleId: 'f-type-toggle',
+    getOptions: () => [...new Set(allData.map(d => getVal(d, '거래분류')).filter(Boolean))].sort(),
+    getSelected: () => selectedTypes,
+    setSelected: (arr) => { selectedTypes = arr; },
+    formatLabel: v => v,
+    emptyLabel: '전체 거래분류',
+    singleFormat: v => v,
+    pluralFormat: n => `거래분류 ${n}개`
+  }
+};
+let msSearchTerm = { status: '', taxmonth: '', client: '', agency: '', year: '', type: '' };
+
+function msEscape(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function msVisibleOptions(kind) {
+  const cfg = MS_CONFIG[kind];
+  const all = cfg.getOptions();
+  const term = (msSearchTerm[kind] || '').toLowerCase();
+  return term ? all.filter(v => cfg.formatLabel(v).toLowerCase().includes(term)) : all;
+}
+
+function msOptionsHtml(kind) {
+  const cfg = MS_CONFIG[kind];
+  const visible = msVisibleOptions(kind);
+  const selected = cfg.getSelected();
+  return visible.length ? visible.map(v => `
+        <div class="ms-option" data-kind="${kind}" data-value="${msEscape(v)}">
+          <span class="ms-check">${selected.includes(v) ? '✓' : ''}</span>
+          <span>${msEscape(cfg.formatLabel(v))}</span>
+        </div>
+      `).join('') : '<div class="ms-empty">검색 결과가 없습니다</div>';
+}
+
+function msHeaderHtml(kind) {
+  const visible = msVisibleOptions(kind);
+  return `
+      <div class="ms-header-actions">
+        <a href="#" class="ms-link" onclick="event.preventDefault(); msSelectAll('${kind}')">${visible.length}개 모두 선택</a>
+        <span class="ms-sep">·</span>
+        <a href="#" class="ms-link" onclick="event.preventDefault(); msClear('${kind}')">지우기</a>
+      </div>
+      <div class="ms-count">${visible.length}개 표시 중</div>
+  `;
+}
+
+function msRenderMenu(kind) {
+  const cfg = MS_CONFIG[kind];
+  const menu = document.getElementById(cfg.menuId);
+  if (!menu) return;
+  menu.innerHTML = `
+    <div class="ms-header">${msHeaderHtml(kind)}</div>
+    <div class="ms-search-wrap">
+      <input type="text" class="ms-search" placeholder="검색..." value="${msEscape(msSearchTerm[kind] || '')}" oninput="msSearch('${kind}', this.value)">
+      <span class="ms-search-icon">⌕</span>
+    </div>
+    <div class="ms-options">${msOptionsHtml(kind)}</div>
+  `;
+}
+
+// 검색어 입력/선택/지우기 시에는 헤더·목록만 갱신하고 검색창 input 요소 자체는 건드리지 않음
+// (매번 통째로 다시 그리면 한글 조합(IME) 중 포커스가 끊기는 문제가 생김)
+function msRenderContent(kind) {
+  const cfg = MS_CONFIG[kind];
+  const menu = document.getElementById(cfg.menuId);
+  if (!menu) return;
+  const headerEl = menu.querySelector('.ms-header');
+  const optionsEl = menu.querySelector('.ms-options');
+  if (headerEl) headerEl.innerHTML = msHeaderHtml(kind);
+  if (optionsEl) optionsEl.innerHTML = msOptionsHtml(kind);
+}
+
+function msUpdateToggleLabel(kind) {
+  const cfg = MS_CONFIG[kind];
+  const btn = document.getElementById(cfg.toggleId);
+  if (!btn) return;
+  const sel = cfg.getSelected();
+  if (!sel.length) btn.textContent = cfg.emptyLabel;
+  else if (sel.length === 1) btn.textContent = cfg.singleFormat(sel[0]);
+  else btn.textContent = cfg.pluralFormat(sel.length);
+}
+
+function msToggle(kind, value) {
+  const cfg = MS_CONFIG[kind];
+  const cur = cfg.getSelected().slice();
+  const i = cur.indexOf(value);
+  if (i === -1) cur.push(value); else cur.splice(i, 1);
+  cfg.setSelected(cur);
+  msRenderContent(kind);
+  msUpdateToggleLabel(kind);
+  render();
+}
+
+function msSelectAll(kind) {
+  const cfg = MS_CONFIG[kind];
+  cfg.setSelected(msVisibleOptions(kind).slice());
+  msRenderContent(kind);
+  msUpdateToggleLabel(kind);
+  render();
+}
+
+function msClear(kind) {
+  const cfg = MS_CONFIG[kind];
+  cfg.setSelected([]);
+  msRenderContent(kind);
+  msUpdateToggleLabel(kind);
+  render();
+}
+
+function msSearch(kind, term) {
+  msSearchTerm[kind] = term;
+  msRenderContent(kind);
+}
+
+function populateGenericFilter(kind) {
+  const cfg = MS_CONFIG[kind];
+  const options = cfg.getOptions();
+  cfg.setSelected(cfg.getSelected().filter(v => options.includes(v)));
+  msSearchTerm[kind] = '';
+  msRenderMenu(kind);
+  msUpdateToggleLabel(kind);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.multiselect-toggle').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const ms = btn.closest('.multiselect');
+      document.querySelectorAll('.multiselect.open').forEach(m => { if (m !== ms) m.classList.remove('open'); });
+      ms.classList.toggle('open');
+    });
+  });
+  document.addEventListener('click', (e) => {
+    const opt = e.target.closest('.ms-option');
+    if (opt) { msToggle(opt.dataset.kind, opt.dataset.value); return; }
+    if (!e.target.closest('.multiselect')) {
+      document.querySelectorAll('.multiselect.open').forEach(m => m.classList.remove('open'));
+    }
+  });
+});
 
 function getFiltered() {
   const search = document.getElementById('f-search').value.toLowerCase();
-  const status = document.getElementById('f-status').value;
-  const client = document.getElementById('f-client').value;
-  const agency = document.getElementById('f-agency').value;
-  const year   = document.getElementById('f-year').value;
-  const type     = document.getElementById('f-type').value;
-  const taxmonth = document.getElementById('f-taxmonth').value;
 
   return allData.filter(d => {
     const c = getVal(d, '광고주').toLowerCase();
     const p = getVal(d, '캠페인').toLowerCase();
     if (search && !c.includes(search) && !p.includes(search)) return false;
-    if (status && getVal(d, '상태')    !== status) return false;
-    if (client && getVal(d, '광고주')  !== client) return false;
-    if (agency && getVal(d, '대행사')  !== agency) return false;
-    if (type   && getVal(d, '거래분류') !== type)   return false;
-    if (taxmonth) {
+    if (selectedStatuses.length && !selectedStatuses.includes(getVal(d, '상태'))) return false;
+    if (selectedClients.length && !selectedClients.includes(getVal(d, '광고주'))) return false;
+    if (selectedAgencies.length && !selectedAgencies.includes(getVal(d, '대행사'))) return false;
+    if (selectedTypes.length && !selectedTypes.includes(getVal(d, '거래분류'))) return false;
+    if (selectedTaxMonths.length) {
       const tm = findVal(d, '세금계산서', '발행월') || findVal(d, '세금계산서발행월') || findVal(d, '세금계산서 발행월');
-      if (tm !== taxmonth) return false;
+      if (!selectedTaxMonths.includes(tm)) return false;
       // 세금계산서 월 필터가 켜지면, 연도 필터는 "세금계산서 발행연도" 기준으로 적용
-      if (year) {
+      if (selectedYears.length) {
         const ty = findVal(d, '세금계산서', '발행연도') || findVal(d, '세금계산서발행연도') || findVal(d, '세금계산서 발행연도');
-        if (ty !== year) return false;
+        if (!selectedYears.includes(ty)) return false;
       }
     } else {
-      if (year && getVal(d, '시작연도') !== year) return false;
+      if (selectedYears.length && !selectedYears.includes(getVal(d, '시작연도'))) return false;
     }
     return true;
   }).sort((a, b) => {
@@ -692,14 +915,16 @@ function sortBy(key) {
 
 function resetFilters() {
   document.getElementById('f-search').value = '';
-  ['f-status','f-client','f-agency','f-year','f-type','f-taxmonth'].forEach(id => document.getElementById(id).selectedIndex = 0);
+  ['status','taxmonth','client','agency','year','type'].forEach(kind => {
+    MS_CONFIG[kind].setSelected([]);
+    msSearchTerm[kind] = '';
+    msRenderMenu(kind);
+    msUpdateToggleLabel(kind);
+  });
   render();
 }
 
-['f-search','f-status','f-client','f-agency','f-year','f-type','f-taxmonth'].forEach(id => {
-  document.getElementById(id).addEventListener('input', render);
-  document.getElementById(id).addEventListener('change', render);
-});
+document.getElementById('f-search').addEventListener('input', render);
 
 let budgetChart = null;
 let chartYear = null;
