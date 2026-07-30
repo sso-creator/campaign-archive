@@ -28,7 +28,7 @@
     }
   }
   html { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 15px; line-height: 1.6; }
-  .shell { max-width: 1600px; margin: 0 auto; padding: 0 24px 60px; }
+  .shell { max-width: 1200px; margin: 0 auto; padding: 0 24px 60px; }
   .site-header {
     padding: 32px 0 28px; border-bottom: 1px solid var(--border); margin-bottom: 28px;
     display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 12px;
@@ -55,42 +55,6 @@
   }
   .filter-bar input { min-width: 200px; }
   .filter-bar input:focus, .filter-bar select:focus { border-color: var(--accent); }
-  .multiselect { position: relative; }
-  .multiselect-toggle {
-    font-family: var(--font); font-size: 13px; color: var(--text); background: var(--surface2);
-    border: 1px solid var(--border); border-radius: 7px; padding: 6px 10px; height: 34px; cursor: pointer;
-  }
-  .multiselect.open .multiselect-toggle { border-color: var(--accent); }
-  .multiselect-menu {
-    display: none; position: absolute; top: calc(100% + 4px); left: 0; z-index: 20; width: 220px;
-    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.15); overflow: hidden;
-  }
-  .multiselect.open .multiselect-menu { display: block; }
-  .ms-header {
-    display: flex; align-items: center; justify-content: space-between; gap: 8px;
-    padding: 9px 12px; font-size: 11.5px; color: var(--text3); border-bottom: 1px solid var(--border);
-  }
-  .ms-header-actions { display: flex; align-items: center; gap: 5px; }
-  .ms-link { color: var(--accent); text-decoration: none; cursor: pointer; }
-  .ms-link:hover { text-decoration: underline; }
-  .ms-sep { color: var(--text3); }
-  .ms-count { white-space: nowrap; }
-  .ms-search-wrap { position: relative; padding: 8px 10px; border-bottom: 1px solid var(--border); }
-  .ms-search {
-    width: 100%; font-family: var(--font); font-size: 12.5px; color: var(--text);
-    background: var(--surface2); border: 1px solid var(--border); border-radius: 6px;
-    padding: 6px 26px 6px 9px; height: 30px; outline: none; box-sizing: border-box;
-  }
-  .ms-search:focus { border-color: var(--accent); }
-  .ms-search-icon { position: absolute; right: 19px; top: 50%; transform: translateY(-50%); color: var(--text3); font-size: 13px; pointer-events: none; }
-  .ms-options { max-height: 220px; overflow-y: auto; padding: 4px; }
-  .ms-option {
-    display: flex; align-items: center; gap: 9px; padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: 13px; white-space: nowrap;
-  }
-  .ms-option:hover { background: var(--surface2); }
-  .ms-check { width: 13px; flex-shrink: 0; color: var(--accent); font-size: 12px; font-weight: 700; text-align: center; }
-  .ms-empty { padding: 16px 8px; text-align: center; font-size: 12.5px; color: var(--text3); }
   .reset-btn {
     font-family: var(--font); font-size: 13px; color: var(--text2); background: transparent;
     border: 1px solid var(--border2); border-radius: 7px; padding: 0 12px; height: 34px; cursor: pointer;
@@ -109,12 +73,6 @@
   tbody tr:last-child { border-bottom: none; }
   tbody tr:hover { background: var(--surface2); }
   tbody td { padding: 10px 14px; vertical-align: middle; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .routes-table td:nth-child(2), .routes-table td:nth-child(5) {
-    white-space: normal; overflow: visible; text-overflow: unset; max-width: 320px; word-break: keep-all; line-height: 1.5;
-  }
-  .routes-table td:nth-child(4) {
-    white-space: nowrap; overflow: visible; text-overflow: unset; max-width: none;
-  }
   td.num { text-align: right; font-variant-numeric: tabular-nums; }
   .badge { display: inline-block; font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 99px; }
   .badge-종료 { background: var(--gray-bg); color: var(--gray); }
@@ -127,7 +85,6 @@
     .badge-직접 { background: #04342C; color: #5DCAA5; }
   }
   .arr { font-size: 10px; opacity: 0.45; margin-left: 2px; }
-  .addr-loading { color: var(--text3); font-style: italic; }
   .msg-row td { text-align: center; padding: 48px; color: var(--text3); font-size: 14px; }
   .error-box {
     background: #fff0f0; border: 1px solid #fcc; border-radius: 10px;
@@ -287,30 +244,12 @@
 
   <div class="filter-bar">
     <input type="search" id="f-search" placeholder="캠페인명 / 광고주 검색..." />
-    <div class="multiselect" id="f-status">
-      <button type="button" class="multiselect-toggle" id="f-status-toggle">전체 상태</button>
-      <div class="multiselect-menu" id="f-status-menu"></div>
-    </div>
-    <div class="multiselect" id="f-client">
-      <button type="button" class="multiselect-toggle" id="f-client-toggle">전체 광고주</button>
-      <div class="multiselect-menu" id="f-client-menu"></div>
-    </div>
-    <div class="multiselect" id="f-agency">
-      <button type="button" class="multiselect-toggle" id="f-agency-toggle">전체 대행사</button>
-      <div class="multiselect-menu" id="f-agency-menu"></div>
-    </div>
-    <div class="multiselect" id="f-year">
-      <button type="button" class="multiselect-toggle" id="f-year-toggle">전체 연도</button>
-      <div class="multiselect-menu" id="f-year-menu"></div>
-    </div>
-    <div class="multiselect" id="f-type">
-      <button type="button" class="multiselect-toggle" id="f-type-toggle">전체 거래분류</button>
-      <div class="multiselect-menu" id="f-type-menu"></div>
-    </div>
-    <div class="multiselect" id="f-taxmonth">
-      <button type="button" class="multiselect-toggle" id="f-taxmonth-toggle">전체 세금계산서 월</button>
-      <div class="multiselect-menu" id="f-taxmonth-menu"></div>
-    </div>
+    <select id="f-status"><option value="">전체 상태</option></select>
+    <select id="f-client"><option value="">전체 광고주</option></select>
+    <select id="f-agency"><option value="">전체 대행사</option></select>
+    <select id="f-year"><option value="">전체 연도</option></select>
+    <select id="f-type"><option value="">전체 거래분류</option></select>
+    <select id="f-taxmonth"><option value="">전체 세금계산서 월</option></select>
     <button class="reset-btn" onclick="resetFilters()">초기화</button>
   </div>
 
@@ -326,8 +265,8 @@
           <th onclick="sortBy('대행사')" style="width:90px">대행사 <span class="arr" id="arr-대행사"></span></th>
           <th onclick="sortBy('예산')" style="width:130px; text-align:right">예산(VAT별도) <span class="arr" id="arr-예산"></span></th>
           <th onclick="sortBy('시작일')" style="width:175px">집행기간 <span class="arr" id="arr-시작일"></span></th>
-          <th onclick="sortBy('시작연도')" style="width:75px">시작연도 <span class="arr" id="arr-시작연도"></span></th>
-          <th onclick="sortBy('시작월')" style="width:50px">월 <span class="arr" id="arr-시작월"></span></th>
+          <th onclick="sortBy('시작연도')" style="width:75px; display:none">시작연도 <span class="arr" id="arr-시작연도"></span></th>
+          <th onclick="sortBy('시작월')" style="width:50px; display:none">월 <span class="arr" id="arr-시작월"></span></th>
           <th onclick="sortBy('세금계산서 발행연도')" style="width:95px">세금계산서 연도 <span class="arr" id="arr-세금계산서 발행연도"></span></th>
           <th onclick="sortBy('세금계산서 발행월')" style="width:75px">세금계산서 월 <span class="arr" id="arr-세금계산서 발행월"></span></th>
           <th onclick="sortBy('거래분류')" style="width:75px">거래분류 <span class="arr" id="arr-거래분류"></span></th>
@@ -369,18 +308,17 @@
   </div>
 
   <div class="table-wrap">
-    <table class="routes-table">
+    <table>
       <thead>
         <tr>
           <th style="width:60px">사용</th>
-          <th style="width:260px">기간</th>
+          <th style="width:170px">기간</th>
           <th style="width:120px">광고주</th>
-          <th style="width:340px">지점</th>
-          <th>주소</th>
+          <th>지점</th>
         </tr>
       </thead>
       <tbody id="routes-body">
-        <tr class="msg-row"><td colspan="5">데이터를 불러오는 중...</td></tr>
+        <tr class="msg-row"><td colspan="4">데이터를 불러오는 중...</td></tr>
       </tbody>
     </table>
   </div>
@@ -418,14 +356,14 @@
 
   <!-- 테이블 -->
   <div class="table-wrap">
-    <table class="material-table">
+    <table>
       <thead>
         <tr>
           <th style="width:60px" onclick="materialSortBy('연도')">연도 <span class="arr" id="marr-연도"></span></th>
           <th style="width:60px" onclick="materialSortBy('정산월')">정산월 <span class="arr" id="marr-정산월"></span></th>
           <th style="width:100px">발행일</th>
-          <th style="width:150px" onclick="materialSortBy('광고주')">광고주 <span class="arr" id="marr-광고주"></span></th>
-          <th style="width:170px">기간</th>
+          <th style="width:120px" onclick="materialSortBy('광고주')">광고주 <span class="arr" id="marr-광고주"></span></th>
+          <th style="width:90px">기간</th>
           <th style="width:90px">성우</th>
           <th style="width:90px; text-align:right" onclick="materialSortBy('비용(VAT별도)')">비용(VAT별도) <span class="arr" id="marr-비용(VAT별도)"></span></th>
           <th style="width:50px; text-align:right" onclick="materialSortBy('글자수')">글자수 <span class="arr" id="marr-글자수"></span></th>
@@ -506,12 +444,6 @@ let routesMap = null;
 let routesMarkers = [];
 let sortKey = '시작일';
 let sortDir = -1;
-let selectedStatuses = [];
-let selectedTaxMonths = [];
-let selectedClients = [];
-let selectedAgencies = [];
-let selectedYears = [];
-let selectedTypes = [];
 
 async function fetchData() {
   document.getElementById('last-updated').textContent = '데이터를 불러오는 중...';
@@ -575,227 +507,84 @@ function findVal(row, ...keywords) {
 }
 
 function populateFilters() {
-  ['status','client','agency','year','type','taxmonth'].forEach(kind => populateGenericFilter(kind));
-}
-
-// ---- 다중선택 드롭다운 (상태 / 세금계산서 월 공용) ----
-const MS_CONFIG = {
-  status: {
-    menuId: 'f-status-menu', toggleId: 'f-status-toggle',
-    getOptions: () => [...new Set(allData.map(d => getVal(d, '상태')).filter(Boolean))].sort(),
-    getSelected: () => selectedStatuses,
-    setSelected: (arr) => { selectedStatuses = arr; },
-    formatLabel: v => v,
-    emptyLabel: '전체 상태',
-    singleFormat: v => v,
-    pluralFormat: n => `상태 ${n}개`
-  },
-  taxmonth: {
-    menuId: 'f-taxmonth-menu', toggleId: 'f-taxmonth-toggle',
-    getOptions: () => [...new Set(allData.map(d => {
-      return findVal(d, '세금계산서', '발행월') || findVal(d, '세금계산서발행월') || findVal(d, '세금계산서 발행월');
-    }).filter(Boolean))].sort((a,b) => parseFloat(a)-parseFloat(b)),
-    getSelected: () => selectedTaxMonths,
-    setSelected: (arr) => { selectedTaxMonths = arr; },
-    formatLabel: v => String(v).replace(/월$/, '') + '월',
-    emptyLabel: '전체 세금계산서 월',
-    singleFormat: v => String(v).replace(/월$/, '') + '월',
-    pluralFormat: n => `세금계산서 월 ${n}개`
-  },
-  client: {
-    menuId: 'f-client-menu', toggleId: 'f-client-toggle',
-    getOptions: () => [...new Set(allData.map(d => getVal(d, '광고주')).filter(Boolean))].sort(),
-    getSelected: () => selectedClients,
-    setSelected: (arr) => { selectedClients = arr; },
-    formatLabel: v => v,
-    emptyLabel: '전체 광고주',
-    singleFormat: v => v,
-    pluralFormat: n => `광고주 ${n}개`
-  },
-  agency: {
-    menuId: 'f-agency-menu', toggleId: 'f-agency-toggle',
-    getOptions: () => [...new Set(allData.map(d => getVal(d, '대행사')).filter(Boolean))].sort(),
-    getSelected: () => selectedAgencies,
-    setSelected: (arr) => { selectedAgencies = arr; },
-    formatLabel: v => v,
-    emptyLabel: '전체 대행사',
-    singleFormat: v => v,
-    pluralFormat: n => `대행사 ${n}개`
-  },
-  year: {
-    menuId: 'f-year-menu', toggleId: 'f-year-toggle',
-    getOptions: () => [...new Set(allData.map(d => getVal(d, '시작연도')).filter(Boolean))].sort(),
-    getSelected: () => selectedYears,
-    setSelected: (arr) => { selectedYears = arr; },
-    formatLabel: v => v,
-    emptyLabel: '전체 연도',
-    singleFormat: v => v,
-    pluralFormat: n => `연도 ${n}개`
-  },
-  type: {
-    menuId: 'f-type-menu', toggleId: 'f-type-toggle',
-    getOptions: () => [...new Set(allData.map(d => getVal(d, '거래분류')).filter(Boolean))].sort(),
-    getSelected: () => selectedTypes,
-    setSelected: (arr) => { selectedTypes = arr; },
-    formatLabel: v => v,
-    emptyLabel: '전체 거래분류',
-    singleFormat: v => v,
-    pluralFormat: n => `거래분류 ${n}개`
-  }
-};
-let msSearchTerm = { status: '', taxmonth: '', client: '', agency: '', year: '', type: '' };
-
-function msEscape(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
-
-function msVisibleOptions(kind) {
-  const cfg = MS_CONFIG[kind];
-  const all = cfg.getOptions();
-  const term = (msSearchTerm[kind] || '').toLowerCase();
-  return term ? all.filter(v => cfg.formatLabel(v).toLowerCase().includes(term)) : all;
-}
-
-function msOptionsHtml(kind) {
-  const cfg = MS_CONFIG[kind];
-  const visible = msVisibleOptions(kind);
-  const selected = cfg.getSelected();
-  return visible.length ? visible.map(v => `
-        <div class="ms-option" data-kind="${kind}" data-value="${msEscape(v)}">
-          <span class="ms-check">${selected.includes(v) ? '✓' : ''}</span>
-          <span>${msEscape(cfg.formatLabel(v))}</span>
-        </div>
-      `).join('') : '<div class="ms-empty">검색 결과가 없습니다</div>';
-}
-
-function msHeaderHtml(kind) {
-  const visible = msVisibleOptions(kind);
-  return `
-      <div class="ms-header-actions">
-        <a href="#" class="ms-link" onclick="event.preventDefault(); msSelectAll('${kind}')">${visible.length}개 모두 선택</a>
-        <span class="ms-sep">·</span>
-        <a href="#" class="ms-link" onclick="event.preventDefault(); msClear('${kind}')">지우기</a>
-      </div>
-      <div class="ms-count">${visible.length}개 표시 중</div>
-  `;
-}
-
-function msRenderMenu(kind) {
-  const cfg = MS_CONFIG[kind];
-  const menu = document.getElementById(cfg.menuId);
-  if (!menu) return;
-  menu.innerHTML = `
-    <div class="ms-header">${msHeaderHtml(kind)}</div>
-    <div class="ms-search-wrap">
-      <input type="text" class="ms-search" placeholder="검색..." value="${msEscape(msSearchTerm[kind] || '')}" oninput="msSearch('${kind}', this.value)">
-      <span class="ms-search-icon">⌕</span>
-    </div>
-    <div class="ms-options">${msOptionsHtml(kind)}</div>
-  `;
-}
-
-// 검색어 입력/선택/지우기 시에는 헤더·목록만 갱신하고 검색창 input 요소 자체는 건드리지 않음
-// (매번 통째로 다시 그리면 한글 조합(IME) 중 포커스가 끊기는 문제가 생김)
-function msRenderContent(kind) {
-  const cfg = MS_CONFIG[kind];
-  const menu = document.getElementById(cfg.menuId);
-  if (!menu) return;
-  const headerEl = menu.querySelector('.ms-header');
-  const optionsEl = menu.querySelector('.ms-options');
-  if (headerEl) headerEl.innerHTML = msHeaderHtml(kind);
-  if (optionsEl) optionsEl.innerHTML = msOptionsHtml(kind);
-}
-
-function msUpdateToggleLabel(kind) {
-  const cfg = MS_CONFIG[kind];
-  const btn = document.getElementById(cfg.toggleId);
-  if (!btn) return;
-  const sel = cfg.getSelected();
-  if (!sel.length) btn.textContent = cfg.emptyLabel;
-  else if (sel.length === 1) btn.textContent = cfg.singleFormat(sel[0]);
-  else btn.textContent = cfg.pluralFormat(sel.length);
-}
-
-function msToggle(kind, value) {
-  const cfg = MS_CONFIG[kind];
-  const cur = cfg.getSelected().slice();
-  const i = cur.indexOf(value);
-  if (i === -1) cur.push(value); else cur.splice(i, 1);
-  cfg.setSelected(cur);
-  msRenderContent(kind);
-  msUpdateToggleLabel(kind);
-  render();
-}
-
-function msSelectAll(kind) {
-  const cfg = MS_CONFIG[kind];
-  cfg.setSelected(msVisibleOptions(kind).slice());
-  msRenderContent(kind);
-  msUpdateToggleLabel(kind);
-  render();
-}
-
-function msClear(kind) {
-  const cfg = MS_CONFIG[kind];
-  cfg.setSelected([]);
-  msRenderContent(kind);
-  msUpdateToggleLabel(kind);
-  render();
-}
-
-function msSearch(kind, term) {
-  msSearchTerm[kind] = term;
-  msRenderContent(kind);
-}
-
-function populateGenericFilter(kind) {
-  const cfg = MS_CONFIG[kind];
-  const options = cfg.getOptions();
-  cfg.setSelected(cfg.getSelected().filter(v => options.includes(v)));
-  msSearchTerm[kind] = '';
-  msRenderMenu(kind);
-  msUpdateToggleLabel(kind);
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.multiselect-toggle').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const ms = btn.closest('.multiselect');
-      document.querySelectorAll('.multiselect.open').forEach(m => { if (m !== ms) m.classList.remove('open'); });
-      ms.classList.toggle('open');
+  const add = (id, key) => {
+    const sel = document.getElementById(id);
+    const cur = sel.value;
+    while (sel.options.length > 1) sel.remove(1);
+    [...new Set(allData.map(d => getVal(d, key)).filter(Boolean))].sort().forEach(v => {
+      const o = document.createElement('option');
+      o.value = v; o.textContent = v; sel.appendChild(o);
     });
+    sel.value = cur;
+  };
+  add('f-status', '상태');
+  add('f-client', '광고주');
+  add('f-agency', '대행사');
+  // 연도 필터: 세금계산서 발행연도 기준
+  const yearSel = document.getElementById('f-year');
+  if (yearSel) {
+    const cur = yearSel.value;
+    while (yearSel.options.length > 1) yearSel.remove(1);
+    const years = [...new Set(allData.map(d =>
+      findVal(d, '세금계산서', '발행연도') || findVal(d, '세금계산서발행연도') || findVal(d, '세금계산서 발행연도')
+    ).filter(Boolean))].sort();
+    years.forEach(v => {
+      const o = document.createElement('option');
+      o.value = v; o.textContent = v;
+      yearSel.appendChild(o);
+    });
+    yearSel.value = cur;
+  }
+  add('f-type',   '거래분류');
+
+  // 세금계산서 발행월 필터 (숫자 정렬)
+  const taxMonthSel = document.getElementById('f-taxmonth');
+  const curTax = taxMonthSel.value;
+  while (taxMonthSel.options.length > 1) taxMonthSel.remove(1);
+  const taxMonths = [...new Set(allData.map(d => {
+    return findVal(d, '세금계산서', '발행월') || findVal(d, '세금계산서발행월') || findVal(d, '세금계산서 발행월');
+  }).filter(Boolean))].sort((a,b) => parseFloat(a)-parseFloat(b));
+  taxMonths.forEach(v => {
+    const o = document.createElement('option');
+    const label = String(v).replace(/월$/, '') + '월';
+    o.value = v; o.textContent = label; taxMonthSel.appendChild(o);
   });
-  document.addEventListener('click', (e) => {
-    const opt = e.target.closest('.ms-option');
-    if (opt) { msToggle(opt.dataset.kind, opt.dataset.value); return; }
-    if (!e.target.closest('.multiselect')) {
-      document.querySelectorAll('.multiselect.open').forEach(m => m.classList.remove('open'));
-    }
-  });
-});
+  taxMonthSel.value = curTax;
+}
 
 function getFiltered() {
   const search = document.getElementById('f-search').value.toLowerCase();
+  const status = document.getElementById('f-status').value;
+  const client = document.getElementById('f-client').value;
+  const agency = document.getElementById('f-agency').value;
+  const year   = document.getElementById('f-year').value;
+  const type     = document.getElementById('f-type').value;
+  const taxmonth = document.getElementById('f-taxmonth').value;
 
   return allData.filter(d => {
     const c = getVal(d, '광고주').toLowerCase();
     const p = getVal(d, '캠페인').toLowerCase();
     if (search && !c.includes(search) && !p.includes(search)) return false;
-    if (selectedStatuses.length && !selectedStatuses.includes(getVal(d, '상태'))) return false;
-    if (selectedClients.length && !selectedClients.includes(getVal(d, '광고주'))) return false;
-    if (selectedAgencies.length && !selectedAgencies.includes(getVal(d, '대행사'))) return false;
-    if (selectedTypes.length && !selectedTypes.includes(getVal(d, '거래분류'))) return false;
-    if (selectedTaxMonths.length) {
+    if (status && getVal(d, '상태')    !== status) return false;
+    if (client && getVal(d, '광고주')  !== client) return false;
+    if (agency && getVal(d, '대행사')  !== agency) return false;
+    if (type   && getVal(d, '거래분류') !== type)   return false;
+    if (taxmonth) {
       const tm = findVal(d, '세금계산서', '발행월') || findVal(d, '세금계산서발행월') || findVal(d, '세금계산서 발행월');
-      if (!selectedTaxMonths.includes(tm)) return false;
+      if (tm !== taxmonth) return false;
       // 세금계산서 월 필터가 켜지면, 연도 필터는 "세금계산서 발행연도" 기준으로 적용
-      if (selectedYears.length) {
+      if (year) {
         const ty = findVal(d, '세금계산서', '발행연도') || findVal(d, '세금계산서발행연도') || findVal(d, '세금계산서 발행연도');
-        if (!selectedYears.includes(ty)) return false;
+        if (ty !== year) return false;
       }
-    } else {
-      if (selectedYears.length && !selectedYears.includes(getVal(d, '시작연도'))) return false;
+    } else if (year) {
+      // 연도 탭이 선택된 경우 세금계산서 발행연도 기준, 아니면 시작연도 기준
+      const ty = findVal(d, '세금계산서', '발행연도') || findVal(d, '세금계산서발행연도') || findVal(d, '세금계산서 발행연도');
+      if (chartYear && ty) {
+        if (ty !== year) return false;
+      } else {
+        if (getVal(d, '시작연도') !== year) return false;
+      }
     }
     return true;
   }).sort((a, b) => {
@@ -903,8 +692,8 @@ function render() {
       <td title="${agency}">${agency||'-'}</td>
       <td class="num">${budget}</td>
       <td title="${period}">${period}</td>
-      <td>${year||'-'}</td>
-      <td>${month||'-'}</td>
+      <td style="display:none">${year||'-'}</td>
+      <td style="display:none">${month||'-'}</td>
       <td>${taxYear||'-'}</td>
       <td>${taxMonth||'-'}</td>
       <td>${badgeTy}</td>
@@ -923,32 +712,32 @@ function sortBy(key) {
 
 function resetFilters() {
   document.getElementById('f-search').value = '';
-  ['status','taxmonth','client','agency','year','type'].forEach(kind => {
-    MS_CONFIG[kind].setSelected([]);
-    msSearchTerm[kind] = '';
-    msRenderMenu(kind);
-    msUpdateToggleLabel(kind);
-  });
+  ['f-status','f-client','f-agency','f-year','f-type','f-taxmonth'].forEach(id => document.getElementById(id).selectedIndex = 0);
   render();
 }
 
-document.getElementById('f-search').addEventListener('input', render);
+['f-search','f-status','f-client','f-agency','f-year','f-type','f-taxmonth'].forEach(id => {
+  document.getElementById(id).addEventListener('input', render);
+  document.getElementById(id).addEventListener('change', render);
+});
 
 let budgetChart = null;
 let chartYear = null;
 
 function buildChart(data) {
-  // 세금계산서 발행연도 기준으로 연도 탭 생성
-  const years = [...new Set(data.map(d => {
-    return findVal(d, '세금계산서', '발행연도') || findVal(d, '세금계산서발행연도') || findVal(d, '세금계산서 발행연도');
-  }).filter(Boolean))].sort();
-  if (!chartYear || !years.includes(chartYear)) chartYear = years[years.length - 1] || null;
+  // Year tabs: 항상 전체 데이터 기준으로 생성 (필터와 무관하게 모든 연도 표시)
+  const allYears = [...new Set(allData.map(d =>
+    findVal(d, '세금계산서', '발행연도') || findVal(d, '세금계산서발행연도') || findVal(d, '세금계산서 발행연도')
+  ).filter(Boolean))].sort();
+  if (!allYears.includes(chartYear)) chartYear = null;  // 기본값: 전체
 
   // Year tabs
   const tabsEl = document.getElementById('year-tabs');
-  tabsEl.innerHTML = years.map(y =>
-    `<button class="chart-year-tab${y === chartYear ? ' active' : ''}" onclick="setChartYear('${y}')">${y}</button>`
-  ).join('');
+  tabsEl.innerHTML =
+    `<button class="chart-year-tab${!chartYear ? ' active' : ''}" onclick="setChartYear(null)">전체</button>` +
+    allYears.map(y =>
+      `<button class="chart-year-tab${y === chartYear ? ' active' : ''}" onclick="setChartYear('${y}')">${y}</button>`
+    ).join('');
 
   const budgetKey = Object.keys(data[0] || allData[0] || {}).find(k => k.includes('예산')) || '예산(VAT별도)';
   const monthlyData = {};
@@ -957,7 +746,8 @@ function buildChart(data) {
   data.forEach(d => {
     const taxYear  = findVal(d, '세금계산서', '발행연도') || findVal(d, '세금계산서발행연도') || findVal(d, '세금계산서 발행연도');
     const taxMonth = findVal(d, '세금계산서', '발행월')   || findVal(d, '세금계산서발행월')   || findVal(d, '세금계산서 발행월');
-    if (taxYear !== chartYear || !taxMonth) return;
+    if (!taxMonth) return;
+    if (chartYear && taxYear !== chartYear) return;  // 전체(null)면 연도 필터 없음
     const m = parseInt(String(taxMonth).replace(/[^0-9]/g,''));
     const b = parseFloat(String(getVal(d, budgetKey)).replace(/[^0-9.]/g,'')) || 0;
     if (m >= 1 && m <= 12) monthlyData[m] += b;
@@ -1017,7 +807,12 @@ function buildChart(data) {
 
 function setChartYear(year) {
   chartYear = year;
-  buildChart(getFiltered());
+  // 연도 필터도 함께 업데이트 → 써머리/테이블/그래프 모두 연동
+  const yearSel = document.getElementById('f-year');
+  if (yearSel) {
+    yearSel.value = year || '';  // null이면 "전체 연도"로 초기화
+  }
+  render();
 }
 
 // ============ 들리Go 운영 가이드 페이지 ============
@@ -1216,83 +1011,26 @@ function renderRoutes() {
   const tbody = document.getElementById('routes-body');
   if (tbody) {
     if (!data.length) {
-      tbody.innerHTML = '<tr class="msg-row"><td colspan="5">조건에 맞는 경로가 없습니다.</td></tr>';
+      tbody.innerHTML = '<tr class="msg-row"><td colspan="4">조건에 맞는 경로가 없습니다.</td></tr>';
     } else {
-      tbody.innerHTML = data.map((r, i) => {
+      tbody.innerHTML = data.map(r => {
         const use = rval(r,0);
         const badge = use === 'O'
           ? `<span class="badge badge-진행중">사용</span>`
           : `<span class="badge badge-종료">미사용</span>`;
         const period = (rval(r,1) && rval(r,2)) ? `${rval(r,1)} ~ ${rval(r,2)}` : (rval(r,1) || '-');
-        const sheetAddr = rval(r,7);
-        const lat = parseFloat(rval(r,5)), lng = parseFloat(rval(r,6));
-        const cached = (!isNaN(lat) && !isNaN(lng)) ? routeAddrCache[addrCacheKey(lat, lng)] : null;
-        const resolvedAddr = sheetAddr || cached;
-        const addrHtml = resolvedAddr
-          ? msEscape(resolvedAddr)
-          : ((!isNaN(lat) && !isNaN(lng)) ? '<span class="addr-loading">주소 조회 중...</span>' : '-');
         return `<tr>
           <td>${badge}</td>
           <td>${period}</td>
           <td>${rval(r,3) || '-'}</td>
           <td>${rval(r,4) || '-'}</td>
-          <td id="route-addr-${i}" title="${resolvedAddr ? msEscape(resolvedAddr) : ''}">${addrHtml}</td>
         </tr>`;
       }).join('');
-      loadRouteAddresses(data);
     }
   }
 
   // 지도
   renderRoutesMap(data);
-}
-
-// ---- 위경도 → 주소 역지오코딩 (OpenStreetMap Nominatim, 무료/키불필요) ----
-const ROUTE_ADDR_CACHE_KEY = 'routeAddrCache_v1';
-let routeAddrCache = {};
-try { routeAddrCache = JSON.parse(localStorage.getItem(ROUTE_ADDR_CACHE_KEY) || '{}'); } catch (e) { routeAddrCache = {}; }
-
-function addrCacheKey(lat, lng) {
-  return `${lat.toFixed(5)},${lng.toFixed(5)}`;
-}
-
-async function reverseGeocode(lat, lng) {
-  const key = addrCacheKey(lat, lng);
-  if (routeAddrCache[key]) return routeAddrCache[key];
-  try {
-    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=ko&zoom=18`);
-    if (!res.ok) throw new Error('geocode failed');
-    const json = await res.json();
-    const addr = json.display_name || '';
-    routeAddrCache[key] = addr;
-    try { localStorage.setItem(ROUTE_ADDR_CACHE_KEY, JSON.stringify(routeAddrCache)); } catch (e) {}
-    return addr;
-  } catch (e) {
-    return '';
-  }
-}
-
-// 화면에 표가 이미 그려진 뒤, 캐시에 없는 좌표만 순차적으로(초당 1건, Nominatim 정책 준수) 조회해서 채워넣음
-async function loadRouteAddresses(data) {
-  for (let i = 0; i < data.length; i++) {
-    const r = data[i];
-    if (rval(r,7)) continue; // 시트(H열)에 주소가 이미 있으면 조회하지 않음
-    const lat = parseFloat(rval(r,5)), lng = parseFloat(rval(r,6));
-    if (isNaN(lat) || isNaN(lng)) continue;
-    const key = addrCacheKey(lat, lng);
-    const cell = document.getElementById(`route-addr-${i}`);
-    if (routeAddrCache[key]) {
-      if (cell) { cell.textContent = routeAddrCache[key]; cell.title = routeAddrCache[key]; }
-      continue;
-    }
-    const addr = await reverseGeocode(lat, lng);
-    const cellNow = document.getElementById(`route-addr-${i}`);
-    if (cellNow) {
-      cellNow.textContent = addr || '주소 확인 불가';
-      cellNow.title = addr || '';
-    }
-    await new Promise(resolve => setTimeout(resolve, 1100));
-  }
 }
 
 function renderRoutesMap(data) {
@@ -1465,7 +1203,7 @@ function renderMaterial() {
 
   tbody.innerHTML = data.map(d => {
     const period = (mval(d,'시작일') && mval(d,'종료일'))
-      ? `${fmtDateKST(mval(d,'시작일'))} ~ ${fmtDateKST(mval(d,'종료일'))}`
+      ? `${fmtDateKST(mval(d,'시작일'))} ~<br>${fmtDateKST(mval(d,'종료일'))}`
       : (fmtDateKST(mval(d,'시작일')) || '-');
     const script = mval(d,'문구');
     const chars = mval(d,'글자수');
@@ -1473,8 +1211,8 @@ function renderMaterial() {
       <td>${mval(d,'연도') || '-'}</td>
       <td>${mval(d,'정산월') ? String(mval(d,'정산월')).replace(/월$/, '') + '월' : '-'}</td>
       <td>${fmtDateKST(mval(d,'발행일')) || '-'}</td>
-      <td title="${mval(d,'광고주')}" style="white-space:nowrap; max-width:none; overflow:visible; text-overflow:unset">${mval(d,'광고주') || '-'}</td>
-      <td style="font-size:12px; white-space:nowrap; max-width:none; overflow:visible; text-overflow:unset">${period}</td>
+      <td title="${mval(d,'광고주')}">${mval(d,'광고주') || '-'}</td>
+      <td style="font-size:11px; line-height:1.5">${period}</td>
       <td>${mval(d,'성우') || '-'}</td>
       <td class="num">${fmt(mval(d,'비용(VAT별도)'))}</td>
       <td class="num">${chars || '-'}</td>
