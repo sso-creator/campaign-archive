@@ -199,12 +199,105 @@
   @media (max-width: 640px) {
     .goad-timeline { flex-wrap: nowrap; }
   }
+
+  /* ---- 로그인 게이트 ---- */
+  .login-gate {
+    position: fixed; inset: 0; z-index: 9999;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .login-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 40px 36px; width: 100%; max-width: 360px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .login-box h2 { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
+  .login-box p { font-size: 13px; color: var(--text3); margin-top: -8px; }
+  .login-box input {
+    font-family: var(--font); font-size: 14px; color: var(--text);
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 14px; width: 100%; outline: none;
+    letter-spacing: 0.05em;
+  }
+  .login-box input:focus { border-color: var(--accent); }
+  .login-btn {
+    font-family: var(--font); font-size: 14px; font-weight: 500;
+    background: var(--accent); color: #fff; border: none;
+    border-radius: 8px; padding: 11px; cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .login-btn:hover { opacity: 0.85; }
+  .login-error {
+    font-size: 12px; color: #c0392b; text-align: center;
+    display: none;
+  }
+  .login-error.show { display: block; }
+
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js">
+// ---- 로그인 게이트 ----
+const PW_KEY = 'archive_auth';
+const CORRECT_PW = 'Incross';
+
+function tryLogin() {
+  const input = document.getElementById('pw-input').value;
+  if (input === CORRECT_PW) {
+    sessionStorage.setItem(PW_KEY, '1');
+    document.getElementById('login-gate').style.display = 'none';
+  } else {
+    document.getElementById('login-error').classList.add('show');
+    document.getElementById('pw-input').value = '';
+    document.getElementById('pw-input').focus();
+  }
+}
+
+// 이미 인증된 경우 바로 통과
+(function() {
+  if (sessionStorage.getItem(PW_KEY) === '1') {
+    document.getElementById('login-gate').style.display = 'none';
+  }
+})();
+
+</script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js">
+// ---- 로그인 게이트 ----
+const PW_KEY = 'archive_auth';
+const CORRECT_PW = 'Incross';
+
+function tryLogin() {
+  const input = document.getElementById('pw-input').value;
+  if (input === CORRECT_PW) {
+    sessionStorage.setItem(PW_KEY, '1');
+    document.getElementById('login-gate').style.display = 'none';
+  } else {
+    document.getElementById('login-error').classList.add('show');
+    document.getElementById('pw-input').value = '';
+    document.getElementById('pw-input').focus();
+  }
+}
+
+// 이미 인증된 경우 바로 통과
+(function() {
+  if (sessionStorage.getItem(PW_KEY) === '1') {
+    document.getElementById('login-gate').style.display = 'none';
+  }
+})();
+
+</script>
 </head>
 <body>
+<div class="login-gate" id="login-gate">
+  <div class="login-box">
+    <h2>캠페인 아카이브</h2>
+    <p>접근하려면 비밀번호를 입력해 주세요.</p>
+    <input type="password" id="pw-input" placeholder="비밀번호" onkeydown="if(event.key==='Enter') tryLogin()" />
+    <button class="login-btn" onclick="tryLogin()">입장</button>
+    <div class="login-error" id="login-error">비밀번호가 올바르지 않습니다.</div>
+  </div>
+</div>
+
 <div class="top-tabs">
   <button class="top-tab active" data-page="archive" onclick="showPage('archive')">집행현황 아카이브</button>
   <button class="top-tab" data-page="routes" onclick="showPage('routes')">경로현황</button>
@@ -1251,6 +1344,30 @@ function resetMaterialFilters() {
 
 fetchData();
 setInterval(fetchData, 5 * 60 * 1000);
+
+// ---- 로그인 게이트 ----
+const PW_KEY = 'archive_auth';
+const CORRECT_PW = 'Incross';
+
+function tryLogin() {
+  const input = document.getElementById('pw-input').value;
+  if (input === CORRECT_PW) {
+    sessionStorage.setItem(PW_KEY, '1');
+    document.getElementById('login-gate').style.display = 'none';
+  } else {
+    document.getElementById('login-error').classList.add('show');
+    document.getElementById('pw-input').value = '';
+    document.getElementById('pw-input').focus();
+  }
+}
+
+// 이미 인증된 경우 바로 통과
+(function() {
+  if (sessionStorage.getItem(PW_KEY) === '1') {
+    document.getElementById('login-gate').style.display = 'none';
+  }
+})();
+
 </script>
 </body>
 </html>
