@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>캠페인 집행현황 아카이브</title>
+<title>티맵 들리Go 캠페인 아카이브</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -236,6 +236,13 @@
 
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js">
+function goHome() {
+  sessionStorage.removeItem('archive_auth');
+  document.getElementById('login-gate').style.display = 'flex';
+  document.getElementById('pw-input').value = '';
+  document.getElementById('login-error').classList.remove('show');
+}
+
 // ---- 로그인 게이트 ----
 const PW_KEY = 'archive_auth';
 const CORRECT_PW = 'Incross';
@@ -262,6 +269,13 @@ function tryLogin() {
 </script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js">
+function goHome() {
+  sessionStorage.removeItem('archive_auth');
+  document.getElementById('login-gate').style.display = 'flex';
+  document.getElementById('pw-input').value = '';
+  document.getElementById('login-error').classList.remove('show');
+}
+
 // ---- 로그인 게이트 ----
 const PW_KEY = 'archive_auth';
 const CORRECT_PW = 'Incross';
@@ -290,7 +304,7 @@ function tryLogin() {
 <body>
 <div class="login-gate" id="login-gate">
   <div class="login-box">
-    <h2>캠페인 아카이브</h2>
+    <h2>티맵 들리Go 캠페인 아카이브</h2>
     <p>접근하려면 비밀번호를 입력해 주세요.</p>
     <input type="password" id="pw-input" placeholder="비밀번호" onkeydown="if(event.key==='Enter') tryLogin()" />
     <button class="login-btn" onclick="tryLogin()">입장</button>
@@ -299,6 +313,7 @@ function tryLogin() {
 </div>
 
 <div class="top-tabs">
+  <button class="top-tab" data-page="home" onclick="goHome()">🏠 홈</button>
   <button class="top-tab active" data-page="archive" onclick="showPage('archive')">집행현황 아카이브</button>
   <button class="top-tab" data-page="routes" onclick="showPage('routes')">경로현황</button>
   <button class="top-tab" data-page="material" onclick="showPage('material')">소재현황</button>
@@ -1344,6 +1359,13 @@ function resetMaterialFilters() {
 
 fetchData();
 setInterval(fetchData, 5 * 60 * 1000);
+
+function goHome() {
+  sessionStorage.removeItem('archive_auth');
+  document.getElementById('login-gate').style.display = 'flex';
+  document.getElementById('pw-input').value = '';
+  document.getElementById('login-error').classList.remove('show');
+}
 
 // ---- 로그인 게이트 ----
 const PW_KEY = 'archive_auth';
