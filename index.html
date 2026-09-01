@@ -1126,7 +1126,7 @@ function renderRoutes() {
         const badge = use === 'O'
           ? `<span class="badge badge-진행중">사용</span>`
           : `<span class="badge badge-종료">미사용</span>`;
-        const period = (rval(r,1) && rval(r,2)) ? `${rval(r,1)} ~ ${rval(r,2)}` : (rval(r,1) || '-');
+        const period = (rval(r,1) && rval(r,2)) ? `${fmtDate(rval(r,1))} ~ ${fmtDate(rval(r,2))}` : (fmtDate(rval(r,1)) || '-');
         return `<tr>
           <td>${badge}</td>
           <td>${period}</td>
@@ -1175,7 +1175,7 @@ function renderRoutesMap(data) {
       weight: 1.5
     }).addTo(routesMap);
 
-    const period = (rval(r,1) && rval(r,2)) ? `${rval(r,1)} ~ ${rval(r,2)}` : '';
+    const period = (rval(r,1) && rval(r,2)) ? `${fmtDate(rval(r,1))} ~ ${fmtDate(rval(r,2))}` : '';
     marker.bindPopup(`<b>${rval(r,3)}</b><br>${rval(r,4)}<br><span style="color:${isActive?activeColor:inactiveColor}">${isActive?'사용중':'미사용'}</span> · ${period}`);
     routesMarkers.push(marker);
     bounds.push([lat, lng]);
